@@ -1,0 +1,19 @@
+{
+  "name": "锚点 Mobile Preview",
+  "short_name": "锚点",
+  "description": "锚点 Mobile 真机 PWA 预览",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#060607",
+  "theme_color": "#060607",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

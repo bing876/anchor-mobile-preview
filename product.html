@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>DIMSPACE Mobile · Frozen Shell Core v7.5 · 2s Recovery + Solid Black Top</title>
+<style>
+/* =====================================================================
+   00 · FROZEN SHELL
+   顶部状态栏、顶部导航、底部导航的文字 / icon / 几何保持冻结。
+   后续 Renderer 不允许改动本区。
+   ===================================================================== */
+:root{
+  --outer-w:330px;
+  --screen-w:307.56px;
+  --screen-h:668.244px;
+  --safe-top:41.241px;
+  --safe-bottom:23.766px;
+  --nav-h:30.756px;
+  --touch:30.756px;
+  --side:7.9686px;
+  --menu-icon:16.9857px;
+  --search-icon:18.0342px;
+  --tab-size:11.6733px;
+  --bottom-core:30px;
+  --bottom-label-size:10.95px;
+  --bottom-bg-extra:3px;
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+
+  --gap:1px;
+  --separator:rgba(255,255,255,.20);
+  --morph-ms:560ms;
+  --morph-ease:cubic-bezier(.16,.78,.18,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{
+  margin:0;width:100%;min-height:100%;
+  background:#0a0a0b;color:#fff;font-family:var(--font)
+}
+body{
+  min-height:100vh;display:grid;place-items:center;overflow:auto;padding:28px
+}
+.phone{
+  width:var(--outer-w);padding:11.22px;border-radius:50px;background:#171719;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 28px 70px rgba(0,0,0,.46)
+}
+.screen{
+  position:relative;width:var(--screen-w);height:var(--screen-h);
+  border-radius:39px;overflow:hidden;background:#050505;container-type:inline-size
+}
+.status-lock{
+  position:absolute;left:0;right:0;top:0;height:var(--safe-top);
+  z-index:2147483647;display:flex;align-items:flex-start;justify-content:space-between;
+  padding:9px 14px 0;color:#fff;pointer-events:none;background:transparent
+}
+.status-time{font-size:13px;font-weight:700;line-height:1}
+.status-right{display:flex;align-items:center;gap:6px}
+.signal{display:flex;gap:2px;align-items:flex-end}
+.signal i{display:block;width:3px;border-radius:99px;background:#8a8d93}
+.signal i:nth-child(1){height:4px;opacity:.5}
+.signal i:nth-child(2){height:6px;opacity:.65}
+.signal i:nth-child(3){height:8px;opacity:.82}
+.signal i:nth-child(4){height:10px}
+.wifi{width:17px;height:13px;display:block}
+.battery{
+  min-width:27px;height:16px;padding:0 6px;border-radius:8px;background:#fff;color:#111;
+  font-size:12px;line-height:16px;font-weight:800;text-align:center
+}
+.app{
+  position:absolute;inset:0;overflow:hidden;
+  background:linear-gradient(180deg,#060607 0%,#030304 100%);
+  --bottom-core:clamp(34px,11.2cqw,38px);
+  --bottom-bg-extra:clamp(4px,1.55cqw,6px);
+  --bottom-label-size:clamp(10.9px,3.58cqw,12.2px);
+  --plus-w:clamp(25.5px,8.55cqw,29.5px);
+  --plus-h:calc(var(--plus-w) * .802)
+}
+.surface{
+  position:absolute;inset:0;z-index:1;overflow:hidden;background:#050505;
+  touch-action:none;cursor:default
+}
+.surface.dragging{cursor:default}
+.world{
+  position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;
+  transform:translate3d(0,0,0);will-change:transform
+}
+.card{
+  position:absolute;left:0;top:0;overflow:hidden;border-radius:0;background:#0a0a0a;
+  contain:layout paint style;will-change:transform,width,height;
+  transition:
+    transform var(--morph-ms) var(--morph-ease),
+    width var(--morph-ms) var(--morph-ease),
+    height var(--morph-ms) var(--morph-ease);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.05),
+    0 1px 0 rgba(255,255,255,.02)
+}
+.card.instant{transition:none!important}
+.card img{
+  width:100%;height:100%;display:block;object-fit:cover;object-position:center;
+  pointer-events:none;-webkit-user-drag:none;user-drag:none;background:#111;
+  will-change:filter,opacity;
+  transition:filter .18s cubic-bezier(.22,.72,.22,1),opacity .18s cubic-bezier(.22,.72,.22,1)
+}
+.card::after{
+  content:"";position:absolute;z-index:2;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.015) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 61%,rgba(0,0,0,.36) 100%)
+}
+.card-meta{position:absolute;inset:0;z-index:6;pointer-events:none}
+.type-badge{
+  position:absolute;top:8px;right:10px;width:28px;height:28px;padding:0;
+  border:1px solid rgba(255,255,255,.09);border-radius:50%;display:grid;place-items:center;
+  background:rgba(11,11,11,.48);color:rgba(238,240,242,.88);
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045)
+}
+.type-badge svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.86;stroke-linecap:round;stroke-linejoin:round}
+.type-badge .solid{fill:currentColor;stroke:none}
+.star-meta{position:absolute;left:11px;bottom:12px;min-height:28px;display:flex;align-items:center;gap:5px}
+.star-meta svg{width:18px;height:18px;display:block;overflow:visible;flex:0 0 auto}
+.star-path{fill:#dfb13d;stroke:#f7d77c;stroke-width:1.28;stroke-linecap:round;stroke-linejoin:round}
+.star-count{font-size:12px;line-height:1;font-weight:650;letter-spacing:-.03em;color:#fff0bd;white-space:nowrap}
+.surface.two .type-badge{top:5px;right:7px;width:20px;height:20px;border-radius:50%;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.surface.two .type-badge svg{width:11px;height:11px;stroke-width:1.78}
+.surface.two .star-meta{left:7px;bottom:9px;min-height:20px;gap:3px}
+.surface.two .star-meta svg{width:14px;height:14px}
+.surface.two .star-count{font-size:9.5px}
+.ambient-light,.edge-dark{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .22s cubic-bezier(.22,.72,.22,1)}
+.ambient-light{z-index:8;background:radial-gradient(ellipse at 50% 49%,rgba(255,255,255,.055) 0%,rgba(255,255,255,.03) 18%,rgba(255,255,255,.012) 30%,rgba(255,255,255,0) 43%);mix-blend-mode:screen}
+.edge-dark{z-index:9;background:radial-gradient(ellipse at 50% 49%,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 31%,rgba(0,0,0,.08) 42%,rgba(0,0,0,.22) 55%,rgba(0,0,0,.42) 68%,rgba(0,0,0,.66) 80%,rgba(0,0,0,.84) 90%,rgba(0,0,0,.97) 100%)}
+.surface.borderless .ambient-light,.surface.borderless .edge-dark{opacity:1}
+.top-eat-shadow{position:absolute;left:0;right:0;top:0;height:calc(var(--safe-top) + var(--nav-h));z-index:12;pointer-events:none;background:#000;box-shadow:none}
+.topbar{position:absolute;top:var(--safe-top);left:0;right:0;height:var(--nav-h);background:transparent;z-index:20}
+.top-left,.top-right{position:absolute;top:0;height:100%;display:flex;align-items:center;z-index:2}
+.top-left{left:var(--side)}.top-right{right:var(--side)}
+.icon-btn{appearance:none;border:0;background:transparent;color:#fff;width:var(--touch);height:var(--touch);padding:0;margin:0;display:grid;place-items:center;border-radius:9.786px;transform:translateY(-3px)}
+.icon-btn.menu svg{width:var(--menu-icon);height:var(--menu-icon)}
+.icon-btn.search svg{width:var(--search-icon);height:var(--search-icon)}
+.tabs{position:absolute;left:50%;top:0;height:100%;width:max-content;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:clamp(10px,3.6cqw,14px);white-space:nowrap}
+.tab{appearance:none;border:0;background:transparent;color:rgba(255,255,255,.80);padding:0;width:clamp(28px,9.2cqw,34px);height:100%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font);font-size:var(--tab-size);font-weight:640;line-height:1;letter-spacing:-.01em;opacity:.96}
+.tab.active{color:#fff;font-weight:730;opacity:1;text-shadow:none;filter:brightness(1.04)}
+.bottom{position:absolute;left:0;right:0;bottom:0;height:calc(var(--bottom-core) + var(--safe-bottom) + var(--bottom-bg-extra));padding-top:var(--bottom-bg-extra);padding-bottom:var(--safe-bottom);background:linear-gradient(180deg,rgba(0,0,2,.64) 0%,rgba(0,0,2,.75) 36%,rgba(0,0,2,.87) 100%);backdrop-filter:blur(22px) saturate(1.14);-webkit-backdrop-filter:blur(22px) saturate(1.14);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));z-index:30;border-top:1px solid rgba(255,255,255,.045);box-shadow:0 -7px 20px rgba(0,0,0,.17)}
+.bottom button{appearance:none;border:0;background:transparent;color:rgba(255,255,255,.68);padding:0;margin:0;height:var(--bottom-core);min-width:0;display:flex;align-items:center;justify-content:center}
+.bottom .nav.active{color:#fff}
+.nav span{display:block;text-align:center;font-family:var(--font);font-size:var(--bottom-label-size);font-weight:610;line-height:1;letter-spacing:-.01em;transform:translateY(-.15px)}
+.center svg{width:var(--plus-w);height:var(--plus-h);display:block;flex:none;transform:translateY(-2.5px)}
+.surface.pinch-live .card,.surface.pinch-live .type-badge,.surface.pinch-live .star-meta{transition:none!important}
+@media(prefers-contrast:more){.type-badge{background:rgba(10,10,10,.66);box-shadow:inset 0 0 0 1px rgba(255,255,255,.26)}}
+@media(prefers-reduced-motion:reduce){:root{--morph-ms:1ms}}
+@media(max-width:420px){body{padding:10px}}
+</style>
+</head>
+<body>
+<div class="phone"><div class="screen"><section class="app">
+<main class="surface two" id="surface"><div class="world" id="world"></div><div class="ambient-light" aria-hidden="true"></div><div class="edge-dark" aria-hidden="true"></div></main>
+<div class="top-eat-shadow" aria-hidden="true"></div>
+<header class="topbar"><div class="top-left"><button class="icon-btn menu" type="button" aria-label="菜单"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6.3H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M4 12H16.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M4 17.7H12.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><div class="tabs"><button class="tab active" type="button">推荐</button><button class="tab" type="button">关注</button></div><div class="top-right"><button class="icon-btn search" type="button" aria-label="搜索"><svg viewBox="0 0 24 24" fill="none"><circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="2.1"/><path d="M15.6 15.6L19.7 19.7" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg></button></div></header>
+<nav class="bottom"><button class="nav active" type="button"><span>首页</span></button><button class="nav" type="button"><span>日常</span></button><button class="center" type="button" aria-label="添加"><svg viewBox="0 0 27.2 21.829"><rect x="0.86" y="0.86" width="25.48" height="20.109" rx="5.72" fill="none" stroke="#f7f7f7" stroke-width="1.72"/><path d="M9.68 10.9145H17.52M13.6 6.9945V14.8345" fill="none" stroke="#f7f7f7" stroke-width="2.26" stroke-linecap="round"/></svg></button><button class="nav" type="button"><span>消息</span></button><button class="nav" type="button"><span>我的</span></button></nav>
+</section><div class="status-lock"><div class="status-time">12:18</div><div class="status-right"><div class="signal"><i></i><i></i><i></i><i></i></div><svg class="wifi" viewBox="0 0 17 13" fill="none"><path d="M1.5 4.9C5.92 1.1 11.08 1.1 15.5 4.9" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M4.25 7.65C6.86 5.35 10.14 5.35 12.75 7.65" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M7.15 10.45C8 9.78 9 9.78 9.85 10.45" stroke="white" stroke-width="2.1" stroke-linecap="round"/></svg><div class="battery">84</div></div></div></div></div>
+<script>
+(()=>{'use strict';
+const IMAGES=['https://images.unsplash.com/photo-1748050868959-6cf84718730d?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1611035234981-b31460d3912c?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1470309864661-68328b2cd0a5?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1727434032773-af3cd98375ba?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1506792006437-256b665541e2?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&fm=jpg&q=78&w=1600','https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&fm=jpg&q=78&w=1600'];
+const TYPES=['video','story','story','app','story','video','app','story','video','story']; const CARD_COUNT=120;
+const surface=document.getElementById('surface'),world=document.getElementById('world'),ambientLight=document.querySelector('.ambient-light'),edgeDark=document.querySelector('.edge-dark');
+const cards=[],pointers=new Map(); let mode='two',layout=[],camX=0,camY=-26,dragId=null,dragStartX=0,dragStartY=0,dragStartCamX=0,dragStartCamY=0,lastX=0,lastY=0,lastT=0,velX=0,velY=0,gestureAxis='pending',sideIntentFrames=0,inertiaRAF=0,snapRAF=0,borderlessSubject=0,pinch=null,settleRAF=0;
+function smooth(t){return t*t*(3-2*t)} function lerp(a,b,t){return a+(b-a)*t}
+function typeIcon(type){if(type==='app')return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.4"/><path d="M3 8.5h18"/></svg>`;if(type==='video')return `<svg viewBox="0 0 24 24"><path class="solid" d="M8.1 5.8c0-.9.98-1.43 1.73-.94l8.7 5.67a1.12 1.12 0 0 1 0 1.88l-8.7 5.67A1.12 1.12 0 0 1 8.1 17.14Z"/></svg>`;return `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle class="solid" cx="9" cy="9" r="1.65"/><path d="m6.7 17 3.25-3.3 3.65 1.32 3.75-1.5L20 16.2"/></svg>`}
+function createCard(i){const el=document.createElement('div');el.className='card';el.dataset.index=i;el.dataset.type=TYPES[i%TYPES.length];const img=document.createElement('img');img.alt='';img.src=IMAGES[i%IMAGES.length];const meta=document.createElement('div');meta.className='card-meta';const type=document.createElement('div');type.className='type-badge';type.innerHTML=typeIcon(el.dataset.type);const save=document.createElement('div');save.className='star-meta';save.innerHTML=`<svg viewBox="0 0 24 24"><path class="star-path" d="m12 3.8 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6L7.1 19l.9-5.5-4-3.9 5.5-.8Z"/></svg><span class="star-count">10w</span>`;meta.append(type,save);el.append(img,meta);world.appendChild(el);return el} for(let i=0;i<CARD_COUNT;i++)cards.push(createCard(i));
+function twoLayout(){const w=surface.clientWidth,gap=1,cardW=(w-gap)/2,cardH=cardW*1.3333,rows=12,per=24,pos=new Array(CARD_COUNT);for(let i=0;i<CARD_COUNT;i++){const page=Math.floor(i/per),local=i%per,col=local%2,row=Math.floor(local/2);pos[i]={x:page*w+col*(cardW+gap),y:row*(cardH+gap)+(col===1?8:0),w:cardW,h:cardH}}return pos}
+function borderlessLayout(subject=borderlessSubject){const w=surface.clientWidth,gap=1,cardW=Math.min(300,w*.77),cardH=cardW*1.3333,stepX=cardW+gap,stepY=cardH+gap,cols=9,centerCol=4,pos=new Array(CARD_COUNT);for(let i=0;i<CARD_COUNT;i++){const q=(i-subject)+centerCol,col=((q%cols)+cols)%cols,row=Math.floor(q/cols);pos[i]={x:(col-centerCol)*stepX,y:row*stepY,w:cardW,h:cardH}}return pos}
+function blendedLayout(a,b,t){const p=smooth(Math.max(0,Math.min(1,t)));return a.map((x,i)=>({x:lerp(x.x,b[i].x,p),y:lerp(x.y,b[i].y,p),w:lerp(x.w,b[i].w,p),h:lerp(x.h,b[i].h,p)}))}
+function render(){world.style.transform=`translate3d(${-camX}px,${-camY}px,0)`;const vw=surface.clientWidth,vh=surface.clientHeight,borderlessAmount=pinch?(pinch.fromMode==='two'?pinch.progress:1-pinch.progress):(mode==='borderless'?1:0);if(ambientLight)ambientLight.style.opacity=borderlessAmount;if(edgeDark)edgeDark.style.opacity=borderlessAmount;cards.forEach((el,i)=>{const p=layout[i];if(!p)return;el.style.width=p.w+'px';el.style.height=p.h+'px';el.style.transform=`translate3d(${p.x}px,${p.y}px,0)`;const img=el.querySelector('img');if(!img)return;const cx=p.x+p.w/2-camX,cy=p.y+p.h/2-camY,nx=(cx-vw/2)/(vw*.5),ny=(cy-vh/2)/(vh*.46),dist=Math.min(1.35,Math.hypot(nx,ny)),focus=smooth(Math.max(0,1-dist/1.02)),tb=.42+focus*.74,ts=.62+focus*.38,tc=.92+focus*.10,to=.84+focus*.16,b=lerp(1,tb,borderlessAmount),s=lerp(1,ts,borderlessAmount),c=lerp(1,tc,borderlessAmount),o=lerp(1,to,borderlessAmount);img.style.filter=`brightness(${b}) saturate(${s}) contrast(${c})`;img.style.opacity=o})}
+function clampCamera(){if(mode==='two'){const w=surface.clientWidth,ch=((w-1)/2)*1.3333,maxY=12*(ch+1)-surface.clientHeight+100,pages=Math.ceil(CARD_COUNT/24);camX=Math.max(0,Math.min((pages-1)*w,camX));camY=Math.max(-28,Math.min(Math.max(0,maxY),camY));return}const vw=surface.clientWidth,vh=surface.clientHeight,xs=layout.map(p=>p.x),ys=layout.map(p=>p.y),mx=layout.map(p=>p.x+p.w),my=layout.map(p=>p.y+p.h);camX=Math.max(Math.min(...xs)-vw*.58,Math.min(Math.max(...mx)-vw+vw*.58,camX));camY=Math.max(Math.min(...ys)-vh*.46,Math.min(Math.max(...my)-vh+vh*.46,camY))}
+function nearestCard(x,y){let best=0,bd=Infinity;layout.forEach((p,i)=>{const dx=p.x+p.w/2-camX-x,dy=p.y+p.h/2-camY-y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=i}});return best}
+function stopSettle(){if(settleRAF){cancelAnimationFrame(settleRAF);settleRAF=0}} function stopMotion(){if(inertiaRAF){cancelAnimationFrame(inertiaRAF);inertiaRAF=0}if(snapRAF){cancelAnimationFrame(snapRAF);snapRAF=0}stopSettle()}
+function softSnapTwoX(){if(mode!=='two')return;const w=surface.clientWidth,fromX=camX,toX=Math.round(camX/w)*w,fromY=camY,duration=2000,begun=performance.now();function tick(now){const t=Math.min(1,(now-begun)/duration),e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;camX=lerp(fromX,toX,e);camY=fromY;render();if(t<1)snapRAF=requestAnimationFrame(tick);else snapRAF=0}snapRAF=requestAnimationFrame(tick)}
+function inertia(ix,iy){let prev=performance.now();function tick(now){const dt=Math.min(32,now-prev)/16.67;prev=now;camX+=ix*dt;camY+=iy*dt;clampCamera();render();const f=Math.pow(.90,dt);ix*=f;iy*=f;if(Math.hypot(ix,iy)>.18)inertiaRAF=requestAnimationFrame(tick);else{inertiaRAF=0;if(mode==='two')setTimeout(softSnapTwoX,90)}}inertiaRAF=requestAnimationFrame(tick)}
+function beginPinch(){if(pointers.size!==2)return;stopMotion();const[a,b]=[...pointers.values()],r=surface.getBoundingClientRect(),anchor={x:(a.x+b.x)/2-r.left,y:(a.y+b.y)/2-r.top},distance=Math.hypot(a.x-b.x,a.y-b.y),subject=nearestCard(anchor.x,anchor.y);borderlessSubject=subject;const fromMode=mode,toMode=fromMode==='two'?'borderless':'two',fromLayout=fromMode==='two'?twoLayout():borderlessLayout(subject),toLayout=toMode==='two'?twoLayout():borderlessLayout(subject);layout=fromLayout;pinch={startDistance:distance,fromMode,toMode,fromLayout,toLayout,subject,anchor,progress:0}}
+function updatePinch(){if(!pinch||pointers.size!==2)return;const[a,b]=[...pointers.values()],r=surface.getBoundingClientRect(),center={x:(a.x+b.x)/2-r.left,y:(a.y+b.y)/2-r.top},distance=Math.hypot(a.x-b.x,a.y-b.y);let p=pinch.fromMode==='two'?(distance/pinch.startDistance-1)/.46:(1-distance/pinch.startDistance)/.38;p=Math.max(0,Math.min(1,p));pinch.progress=p;layout=blendedLayout(pinch.fromLayout,pinch.toLayout,p);const s=layout[pinch.subject];camX=s.x+s.w/2-center.x;camY=s.y+s.h/2-center.y;render()}
+function settlePinch(commit){if(!pinch)return;const st=pinch;pinch=null;const target=commit?1:0,start=st.progress,duration=commit?360:300,begun=performance.now();function tick(now){const t=Math.min(1,(now-begun)/duration),e=1-Math.pow(1-t,4),p=lerp(start,target,e);layout=blendedLayout(st.fromLayout,st.toLayout,p);const s=layout[st.subject];camX=s.x+s.w/2-st.anchor.x;camY=s.y+s.h/2-st.anchor.y;render();if(t<1)settleRAF=requestAnimationFrame(tick);else{settleRAF=0;mode=commit?st.toMode:st.fromMode;layout=mode==='two'?twoLayout():borderlessLayout(st.subject);surface.classList.toggle('two',mode==='two');surface.classList.toggle('borderless',mode==='borderless');clampCamera();render()}}settleRAF=requestAnimationFrame(tick)}
+surface.addEventListener('pointerdown',e=>{pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});try{surface.setPointerCapture(e.pointerId)}catch(_){}if(pointers.size===1){stopMotion();dragId=e.pointerId;dragStartX=lastX=e.clientX;dragStartY=lastY=e.clientY;dragStartCamX=camX;dragStartCamY=camY;lastT=performance.now();velX=velY=0}else if(pointers.size===2){dragId=null;beginPinch()}});
+surface.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===2){updatePinch();e.preventDefault();return}if(e.pointerId!==dragId||pinch)return;const dx=e.clientX-dragStartX,dy=e.clientY-dragStartY;camX=dragStartCamX-dx;camY=dragStartCamY-dy;const now=performance.now(),dt=Math.max(1,now-lastT);velX=-(e.clientX-lastX)/dt;velY=-(e.clientY-lastY)/dt;lastX=e.clientX;lastY=e.clientY;lastT=now;clampCamera();render();e.preventDefault()});
+function endPointer(e){pointers.delete(e.pointerId);if(pinch&&pointers.size<2){settlePinch(pinch.progress>=.36);dragId=null;return}if(e.pointerId===dragId){dragId=null;const ix=velX*16.67,iy=velY*16.67;if(Math.hypot(ix,iy)>.9)inertia(ix,iy);else if(mode==='two')setTimeout(softSnapTwoX,90)}if(pointers.size===1&&!pinch){const[id,p]=[...pointers.entries()][0];dragId=id;dragStartX=lastX=p.x;dragStartY=lastY=p.y;dragStartCamX=camX;dragStartCamY=camY;lastT=performance.now();velX=velY=0}}
+surface.addEventListener('pointerup',endPointer);surface.addEventListener('pointercancel',endPointer);
+const tabs=[...document.querySelectorAll('.tab')];tabs.forEach(t=>t.onclick=()=>tabs.forEach(x=>x.classList.toggle('active',x===t)));
+function reset(){layout=mode==='two'?twoLayout():borderlessLayout(borderlessSubject);clampCamera();render()}new ResizeObserver(reset).observe(surface);reset();
+})();
+</script>
+</body>
+</html>

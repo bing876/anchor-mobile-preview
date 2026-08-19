@@ -1,0 +1,96 @@
+2.5);
+      const accumulated=wheelAccumX>=18 && wheelAccumX>wheelAccumY*.34;
+
+      if(side||accumulated)wheelSideFrames++;
+      else wheelSideFrames=Math.max(0,wheelSideFrames-1);
+
+      if(wheelSideFrames>=2)wheelAxis='free';
+    }
+
+    if(mode==='two'){
+      if(wheelAxis==='vertical'){
+        if(wheelLockedX===null){
+          wheelLockedX=nearestTwoTargetX(camX);
+        }
+        applyDragResistance(wheelLockedX,camY+dy);
+      }else{
+        wheelLockedX=null;
+        applyDragResistance(camX+dx,camY+dy);
+      }
+
+      render();
+
+      clearTimeout(wheelTimer);
+      wheelTimer=setTimeout(()=>{
+        const finalTarget=nearestTwoTargetX(camX);
+        twoRecoveryTargetX=null;
+        scheduleTwoAlignment(220,finalTarget);
+        resetWheel();
+      },220);
+
+      e.preventDefault();
+      return;
+    }
+
+    if(wheelAxis==='vertical'){
+      applyDragResistance(camX,camY+dy);
+    }else{
+      applyDragResistance(camX+dx,camY+dy);
+    }
+
+    render();
+
+    clearTimeout(wheelTimer);
+    wheelTimer=setTimeout(()=>{
+      springToBounds();
+      resetWheel();
+    },120);
+
+    e.preventDefault();
+  },{passive:false});
+
+  /* =================================================================
+     07 · DESKTOP TEST SHORTCUTS
+     3 = borderless reference layer
+     2 = two-column
+     ================================================================= */
+  function keyboardMorph(toMode){
+    if(toMode===mode)return;
+
+    const anchor={x:surface.clientWidth/2,y:surface.clientHeight*.48};
+    const subject=nearestCard(anchor.x,anchor.y);
+    borderlessSubject=subject;
+
+    const fromLayout=mode==='two'?twoLayout():borderlessLayout(subject);
+    const toLayout=toMode==='two'?twoLayout():borderlessLayout(subject);
+    const start=performance.now();
+    const duration=520;
+    const fromMode=mode;
+
+    stopMotion();
+    surface.classList.add('pinch-live');
+
+    function tick(now){
+      const t=Math.min(1,(now-start)/duration);
+      const p=1-Math.pow(1-t,4);
+      morphVisualAmount=toMode==='borderless' ? p : 1-p;
+      layout=blendedLayout(fromLayout,toLayout,p);
+
+      const s=layout[subject];
+      camX=s.x+s.w/2-anchor.x;
+      camY=s.y+s.h/2-anchor.y;
+
+      surface.classList.toggle('borderless',toMode==='borderless' || p>.08);
+      surface.classList.toggle('two',fromMode==='two' && p<=.08);
+
+      render();
+
+      if(t<1){
+        settleRAF=requestAnimationFrame(tick);
+      }else{
+        settleRAF=0;
+        mode=toMode;
+        layout=toLayout;
+        surface.classList.toggle('two',mode==='two');
+        surface.classList.toggle('borderless',mode==='borderless');
+        surface.classList.remove('pinch-live');

@@ -20,41 +20,6 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
 <script>
 (async()=>{
   const state=document.getElementById('state');
-
-  async function decodeNative(bytes){
-    if(!('DecompressionStream' in window)) throw new Error('native gzip unsupported');
-    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    return await new Response(stream).text();
-  }
-
-  async function loadPako(){
-    if(window.pako) return window.pako;
-    const urls=[
-      'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js',
-      'https://unpkg.com/pako@2.1.0/dist/pako.min.js'
-    ];
-    for(const src of urls){
-      try{
-        await new Promise((resolve,reject)=>{
-          const s=document.createElement('script');
-          s.src=src;
-          s.async=true;
-          const timer=setTimeout(()=>{s.remove();reject(new Error('timeout'))},8000);
-          s.onload=()=>{clearTimeout(timer);resolve()};
-          s.onerror=()=>{clearTimeout(timer);reject(new Error('load failed'))};
-          document.head.appendChild(s);
-        });
-        if(window.pako) return window.pako;
-      }catch(_){ }
-    }
-    throw new Error('fallback gzip unavailable');
-  }
-
-  async function decodeFallback(bytes){
-    const pako=await loadPako();
-    return new TextDecoder('utf-8').decode(pako.ungzip(bytes));
-  }
-
   try{
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
@@ -65,25 +30,28 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       await Promise.all(keys.map(k=>caches.delete(k)));
     }
 
-    const r=await fetch('./v33/payload.b64?v=33-native-gzip',{cache:'no-store'});
-    if(!r.ok) throw new Error('payload HTTP '+r.status);
+    const parts=[
+      './v33plain/part01.txt',
+      './v33plain/part02.txt',
+      './v33plain/part03.txt',
+      './v33plain/part04.txt',
+      './v33plain/part05.txt',
+      './v33plain/part06.txt',
+      './v33plain/part07a.txt',
+      './v33plain/part07b.txt'
+    ];
 
-    const b64=(await r.text()).replace(/\s+/g,'');
-    if(!b64.startsWith('H4sI')) throw new Error('payload format invalid');
-
-    const bin=atob(b64);
-    const bytes=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-
-    let html='';
-    try{
-      html=await decodeNative(bytes);
-    }catch(nativeErr){
-      console.warn('native gzip failed:',nativeErr);
-      html=await decodeFallback(bytes);
+    const chunks=[];
+    for(const url of parts){
+      const r=await fetch(url+'?v=33-plain-final',{cache:'no-store'});
+      if(!r.ok) throw new Error(url+' HTTP '+r.status);
+      chunks.push(await r.text());
     }
 
-    if(!html || !html.includes('<!doctype html>')) throw new Error('decoded HTML invalid');
+    const html=chunks.join('');
+    if(!html.startsWith('<!doctype html>')) throw new Error('HTML 开头校验失败');
+    if(!html.includes('</html>')) throw new Error('HTML 结尾校验失败');
+    if(!html.includes('dimspace-star-clear-all-feed-modes')) throw new Error('当前版本校验失败');
 
     document.open();
     document.write(html);

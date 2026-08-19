@@ -1,0 +1,85 @@
+        morphVisualAmount=null;
+        clampCamera();
+        render();
+
+        if(mode==='borderless') scheduleBorderlessCenter(320);
+        else { resetCenterProgress(true); scheduleTwoAlignment(140,nearestTwoTargetX(camX)); }
+      }
+    }
+    settleRAF=requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('keydown',e=>{
+    if(e.key==='3')keyboardMorph('borderless');
+    if(e.key==='2')keyboardMorph('two');
+  });
+
+  /* =================================================================
+     08 · FROZEN CHROME GUARD
+     ================================================================= */
+  document.querySelectorAll('.topbar button,.bottom button').forEach(btn=>{
+    btn.addEventListener('pointerdown',e=>e.stopPropagation());
+    btn.addEventListener('pointermove',e=>e.stopPropagation());
+    btn.addEventListener('pointerup',e=>e.stopPropagation());
+  });
+
+  bottomNavButtons.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const section=btn.dataset.section || 'home';
+      setSection(section);
+    });
+  });
+
+  const centerBtn=document.querySelector('.bottom .center');
+  if(centerBtn){
+    centerBtn.addEventListener('click',e=>{
+      e.preventDefault();
+      centerBtn.animate(
+        [{transform:'scale(1)'},{transform:'scale(.965)'},{transform:'scale(1)'}],
+        {duration:180,easing:'ease-out'}
+      );
+    });
+  }
+
+  const tabs=[...document.querySelectorAll('.tab')];
+  tabs.forEach(tab=>tab.addEventListener('click',()=>{
+    tabs.forEach(t=>t.classList.toggle('active',t===tab));
+  }));
+
+  /* =================================================================
+     09 · INIT / RESIZE
+     ================================================================= */
+  function resetLayout(){
+    layout=mode==='two'?twoLayout():borderlessLayout(borderlessSubject);
+    clampCamera();
+    applyLayout(layout,true);
+  }
+
+  appRoot.classList.add('section-home-active');
+  setSection('home');
+
+  // Render immediately first. Some embedded preview environments initialize
+  // ResizeObserver late or do not expose it at all.
+  resetLayout();
+
+  if('ResizeObserver' in window){
+    const resizeObserver=new ResizeObserver(()=>{
+      if(surface.clientWidth>0 && surface.clientHeight>0){
+        resetLayout();
+      }
+    });
+    resizeObserver.observe(surface);
+  }else{
+    window.addEventListener('resize',resetLayout,{passive:true});
+  }
+
+  // One extra frame after the iframe/layout has received its final size.
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      if(surface.clientWidth>0 && surface.clientHeight>0) resetLayout();
+    });
+  });
+})();
+</script>
+</body>
+</html>

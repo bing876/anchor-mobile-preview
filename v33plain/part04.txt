@@ -1,0 +1,440 @@
+    </div>
+
+      <!-- FROZEN TOP -->
+      <div class="top-eat-shadow" aria-hidden="true"></div>
+      <header class="topbar">
+        <div class="top-left">
+          <button class="icon-btn menu" type="button" aria-label="菜单">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 6.3H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M4 12H16.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M4 17.7H12.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" type="button">推荐</button>
+          <button class="tab" type="button">关注</button>
+        </div>
+        <div class="top-right">
+          <button class="icon-btn search" type="button" aria-label="搜索">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="2.1"/>
+              <path d="M15.6 15.6L19.7 19.7" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- FROZEN BOTTOM -->
+      <nav class="bottom" aria-label="底部导航">
+        <button class="nav active" data-section="home" type="button" aria-label="首页">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path class="fill-active" d="M3.7 10.25 12 3.6l8.3 6.65v8.35c0 1.1-.9 2-2 2h-3.8v-6.2h-5v6.2H5.7c-1.1 0-2-.9-2-2Z"/>
+            </svg>
+          </span>
+          <span class="nav-label">首页</span>
+          <i class="home-indicator-dot" aria-hidden="true"></i>
+        </button>
+
+        <button class="nav" data-section="daily" type="button" aria-label="日常">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8.2"/>
+              <path d="m15.3 8.7-2.1 4.55-4.5 2.05 2.05-4.5Z"/>
+            </svg>
+          </span>
+          <span class="nav-label">日常</span>
+        </button>
+
+        <button class="center" type="button" aria-label="添加">
+          <svg viewBox="0 0 27.2 21.829" aria-hidden="true">
+            <rect x="0.86" y="0.86" width="25.48" height="20.109" rx="5.72"
+              fill="none" stroke="#f7f7f7" stroke-width="1.72"/>
+            <path d="M9.68 10.9145H17.52M13.6 6.9945V14.8345"
+              fill="none" stroke="#f7f7f7" stroke-width="2.26" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <button class="nav" data-section="messages" type="button" aria-label="消息">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M6.15 10.2c0-3.45 2.22-5.95 5.85-5.95s5.85 2.5 5.85 5.95v3.2c0 1.08.38 2.12 1.08 2.95l.62.73H4.45l.62-.73a4.58 4.58 0 0 0 1.08-2.95Z"/>
+              <path d="M9.6 19.05c.53.62 1.34.95 2.4.95s1.87-.33 2.4-.95"/>
+            </svg>
+          </span>
+          <span class="nav-label">消息</span>
+        </button>
+
+        <button class="nav" data-section="mine" type="button" aria-label="我的">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="8.1" r="3.5"/>
+              <path d="M5.6 20c.28-3.78 2.62-5.8 6.4-5.8s6.12 2.02 6.4 5.8Z"/>
+            </svg>
+          </span>
+          <span class="nav-label">我的</span>
+        </button>
+      </nav>
+    </section>
+
+    <!-- FROZEN STATUS -->
+    <div class="status-lock">
+      <div class="status-time">12:18</div>
+      <div class="status-right">
+        <div class="signal"><i></i><i></i><i></i><i></i></div>
+        <svg class="wifi" viewBox="0 0 17 13" fill="none">
+          <path d="M1.5 4.9C5.92 1.1 11.08 1.1 15.5 4.9" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4.25 7.65C6.86 5.35 10.14 5.35 12.75 7.65" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7.15 10.45C8 9.78 9 9.78 9.85 10.45" stroke="white" stroke-width="2.1" stroke-linecap="round"/>
+        </svg>
+        <div class="battery">84</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =================================================================
+     01 · DATA
+     只保留首页对象类型；详情页完全不存在。
+     ================================================================= */
+  const IMAGES=[
+    'https://images.unsplash.com/photo-1748050868959-6cf84718730d?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1611035234981-b31460d3912c?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1470309864661-68328b2cd0a5?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1727434032773-af3cd98375ba?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1506792006437-256b665541e2?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&fm=jpg&q=78&w=1600'
+  ];
+  const TYPES=['video','image','music','app','image','video','music','app','image','video','app','music'];
+  const CARD_COUNT=120;
+
+  const surface=document.getElementById('surface');
+  const world=document.getElementById('world');
+  const ambientLight=document.querySelector('.ambient-light');
+  const edgeDark=document.querySelector('.edge-dark');
+  const appRoot=document.querySelector('.app');
+  const detailView=document.getElementById('detailView');
+  const detailMedia=document.getElementById('detailMedia');
+  const detailBackBtn=document.getElementById('detailBackBtn');
+
+  const sectionViews={
+    daily:document.getElementById('dailyView'),
+    messages:document.getElementById('messageView'),
+    mine:document.getElementById('mineView')
+  };
+  const bottomNavButtons=[...document.querySelectorAll('.bottom .nav[data-section]')];
+  let currentSection='home';
+
+  const cards=[];
+  const pointers=new Map();
+
+  let mode='two';                 // two | borderless
+  let layout=[];
+  let camX=0;
+  let camY=0;
+
+  let dragId=null;
+  let dragStartX=0,dragStartY=0;
+  let dragStartCamX=0,dragStartCamY=0;
+  let lastX=0,lastY=0,lastT=0;
+  let velX=0,velY=0;
+  let gestureAxis='pending';
+  let sideIntentFrames=0;
+  let twoHorizontalUnlocked=false;
+  let twoVerticalLockedX=null;
+
+  // Native click can be swallowed by pointer capture.
+  // Detect card taps at the canvas layer instead.
+  let tapCandidateIndex=-1;
+  let tapStartX=0;
+  let tapStartY=0;
+  let tapStartTime=0;
+  let tapMoved=false;
+  let inertiaRAF=0;
+  let snapRAF=0;
+  let twoAlignTimer=0;
+  let twoRecoveryTargetX=null;
+
+  // Borderless mapping is anchored around the subject that initiated expansion.
+  let borderlessSubject=0;
+
+  // Interactive pinch morph.
+  let pinch=null;
+  let settleRAF=0;
+  let morphVisualAmount=null;
+
+  let borderlessCenterTimer=0;
+  let borderlessCenterRAF=0;
+  let centerProgressCard=-1;
+  let centeredCard=-1;
+
+  let detailOpen=false;
+  let detailPointer=null;
+  let detailStartX=0;
+  let detailStartY=0;
+  let detailLastX=0;
+  let detailLastT=0;
+  let detailVelocityX=0;
+  let detailSwipeActive=false;
+
+  function typeIcon(type){
+    if(type==='video'){
+      return `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.1 5.7c0-.92 1.02-1.46 1.78-.95l8.48 5.59a1.13 1.13 0 0 1 0 1.89l-8.48 5.59c-.76.5-1.78-.04-1.78-.95Z"
+                fill="currentColor" stroke="none"/>
+        </svg>`;
+    }
+
+    if(type==='music'){
+      return `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9.5 17.4V6.8l8-1.8v10.35"/>
+          <circle cx="7.15" cy="17.55" r="2.35" fill="currentColor" stroke="none"/>
+          <circle cx="15.15" cy="15.7" r="2.35" fill="currentColor" stroke="none"/>
+        </svg>`;
+    }
+
+    if(type==='app'){
+      return `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4.4" y="4.4" width="6.2" height="6.2" rx="1.35"/>
+          <rect x="13.4" y="4.4" width="6.2" height="6.2" rx="1.35"/>
+          <rect x="4.4" y="13.4" width="6.2" height="6.2" rx="1.35"/>
+          <rect x="13.4" y="13.4" width="6.2" height="6.2" rx="1.35"/>
+        </svg>`;
+    }
+
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.8" y="4.3" width="16.4" height="15.4" rx="2.2"/>
+        <circle cx="8.3" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+        <path d="m5.8 17 4.1-4.1c.55-.55 1.43-.56 1.99-.03l2.05 1.95 1.42-1.45c.55-.57 1.46-.58 2.03-.03l2.82 2.72"/>
+      </svg>`;
+  }
+
+
+  // Temporary popularity demo model.
+  // Yellow: 1=10w, 2=30w, 3=50w.
+  // Red:    1=100w, 2=500w, 3=1000w.
+  const VIEW_LEVELS=[
+    10,30,50,100,500,1000,
+    30,10,500,50,100,1000,
+    10,50,30,100,500,1000
+  ];
+
+  function starTier(value){
+    if(value>=1000) return {count:3,color:'red'};
+    if(value>=500)  return {count:2,color:'red'};
+    if(value>=100)  return {count:1,color:'red'};
+    if(value>=50)   return {count:3,color:'yellow'};
+    if(value>=30)   return {count:2,color:'yellow'};
+    return {count:1,color:'yellow'};
+  }
+
+  function starMarkup(value){
+    const tier=starTier(value);
+    const glyph=tier.color==='red' ? '★' : '★';
+    const color=tier.color==='red' ? '#ff3b30' : '#ffd42a';
+
+    return Array.from({length:tier.count},()=>(
+      `<span class="star-glyph" style="color:${color}">${glyph}</span>`
+    )).join('');
+  }
+
+  function createCard(index){
+    const el=document.createElement('div');
+    el.className='card';
+    el.dataset.index=String(index);
+    el.dataset.type=TYPES[index%TYPES.length];
+
+    const img=document.createElement('img');
+    img.alt='';
+    img.src=IMAGES[index%IMAGES.length];
+    img.addEventListener('error',()=>{
+      img.onerror=null;
+      img.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iODAwIiB2aWV3Qm94PSIwIDAgNjAwIDgwMCI+CjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyNTMwNGEiLz48c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjMTQxYTI3Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDgwOTBjIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjgwMCIgZmlsbD0idXJsKCNnKSIvPgo8Y2lyY2xlIGN4PSI0MjAiIGN5PSIxODAiIHI9IjE1MCIgZmlsbD0iIzMxNDI2ZiIgb3BhY2l0eT0iLjMyIi8+CjxyZWN0IHg9IjcwIiB5PSI0NzAiIHdpZHRoPSI0NjAiIGhlaWdodD0iMiIgZmlsbD0id2hpdGUiIG9wYWNpdHk9Ii4xMCIvPgo8L3N2Zz4=';
+    });
+
+    const meta=document.createElement('div');
+    meta.className='card-meta';
+
+    const type=document.createElement('div');
+    type.className='type-badge';
+    type.innerHTML=typeIcon(el.dataset.type);
+
+    const save=document.createElement('div');
+    save.className='star-meta';
+    save.innerHTML=starMarkup(VIEW_LEVELS[index%VIEW_LEVELS.length]);
+
+    const progress=document.createElement('div');
+    progress.className='center-progress';
+    progress.innerHTML='<i></i>';
+
+    meta.append(type,save);
+    el.append(img,meta,progress);
+    world.appendChild(el);
+
+    // Card entry is handled by the surface-level tap detector below.
+    // This remains intentionally empty because pointer capture can retarget native clicks.
+
+    return el;
+  }
+
+  for(let i=0;i<CARD_COUNT;i++) cards.push(createCard(i));
+
+  /* =================================================================
+     02 · LAYOUT DEFINITIONS
+     ================================================================= */
+  function twoLayout(){
+    const w=surface.clientWidth;
+    const gap=1;
+    const cardW=(w-gap)/2;
+    const cardH=cardW*1.3333;
+    const rowsPerPage=12;
+    const perPage=rowsPerPage*2;
+    const positions=new Array(CARD_COUNT);
+
+    for(let i=0;i<CARD_COUNT;i++){
+      const page=Math.floor(i/perPage);
+      const local=i%perPage;
+      const col=local%2;
+      const row=Math.floor(local/2);
+
+      positions[i]={
+        x:page*w+col*(cardW+gap),
+        y:row*(cardH+gap)+(col===1?8:0),
+        w:cardW,
+        h:cardH
+      };
+    }
+    return positions;
+  }
+
+  function borderlessLayout(subject=borderlessSubject){
+    const w=surface.clientWidth;
+    const gap=1;
+
+    // Strictly from uploaded reference v45:
+    // mobile CARD_W = min(300, app width * .77)
+    // CARD_H = CARD_W * 1.3333
+    const cardW=Math.min(300,w*.77);
+    const cardH=cardW*1.3333;
+    const stepX=cardW+gap;
+    const stepY=cardH+gap;
+
+    const cols=9;
+    const centerCol=4;
+    const positions=new Array(CARD_COUNT);
+
+    // Subject sits at the local grid center. Earlier/later items extend
+    // above/below/left/right instead of "jumping to another page".
+    for(let i=0;i<CARD_COUNT;i++){
+      const q=(i-subject)+centerCol;
+      const col=((q%cols)+cols)%cols;
+      const row=Math.floor(q/cols);
+
+      positions[i]={
+        x:(col-centerCol)*stepX,
+        y:row*stepY,
+        w:cardW,
+        h:cardH
+      };
+    }
+    return positions;
+  }
+
+  function getLayout(currentMode){
+    return currentMode==='two' ? twoLayout() : borderlessLayout();
+  }
+
+  function lerp(a,b,t){return a+(b-a)*t}
+  function smooth(t){return t*t*(3-2*t)}
+
+  function blendedLayout(from,to,t){
+    const p=smooth(Math.max(0,Math.min(1,t)));
+    return from.map((a,i)=>{
+      const b=to[i];
+      return {
+        x:lerp(a.x,b.x,p),
+        y:lerp(a.y,b.y,p),
+        w:lerp(a.w,b.w,p),
+        h:lerp(a.h,b.h,p)
+      };
+    });
+  }
+
+  /* =================================================================
+     03 · RENDER
+     ================================================================= */
+  function render(){
+    world.style.transform=`translate3d(${-camX}px,${-camY}px,0)`;
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+
+    const borderlessAmount=pinch
+      ? (pinch.fromMode==='two' ? pinch.progress : 1-pinch.progress)
+      : (morphVisualAmount!==null ? morphVisualAmount : (mode==='borderless' ? 1 : 0));
+
+    if(ambientLight) ambientLight.style.opacity=borderlessAmount.toFixed(3);
+    if(edgeDark) edgeDark.style.opacity=borderlessAmount.toFixed(3);
+
+    cards.forEach((el,i)=>{
+      const p=layout[i];
+      if(!p)return;
+
+      el.style.width=p.w+'px';
+      el.style.height=p.h+'px';
+      el.style.transform=`translate3d(${p.x}px,${p.y}px,0)`;
+
+      const img=el.querySelector('img');
+      if(!img)return;
+
+      const cx=p.x+p.w/2-camX;
+      const cy=p.y+p.h/2-camY;
+
+      // v38 reference focus geometry and image treatment.
+      const nx=(cx-vw/2)/(vw*.50);
+      const ny=(cy-vh/2)/(vh*.50);
+      const d=Math.hypot(nx,ny);
+
+      let borderlessDim=1;
+      let borderlessBright=1;
+      let opacity=1;
+
+      if(d<.34){
+        borderlessBright=1.11;
+      }else if(d<.78){
+        const q=(d-.34)/.44;
+        borderlessBright=1.11-(.13*q);
+        borderlessDim=1-(.17*q);
+      }else{
+        const q=Math.min(1,(d-.78)/.82);
+        borderlessBright=.98-(.20*q);
+        borderlessDim=.83-(.28*q);
+        opacity=1-(.10*q);
+      }
+
+      const finalBright=lerp(1,borderlessBright*borderlessDim,borderlessAmount);
+      const finalOpacity=lerp(1,opacity,borderlessAmount);
+
+      img.style.filter=`brightness(${finalBright.toFixed(3)})`;
+      img.style.opacity=finalOpacity.toFixed(3);
+    });
+  }

@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>DIMSPACE Mobile · Fullscreen</title>
+<meta name="theme-color" content="#050505">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="锚点">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>DIMSPACE Mobile · v10.3.0</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505}
@@ -12,23 +19,6 @@ iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#050
 </style>
 </head>
 <body>
-<iframe id="app" src="./product.html" title="DIMSPACE Mobile"></iframe>
-<script>
-const frame=document.getElementById('app');
-frame.addEventListener('load',()=>{
-  try{
-    const d=frame.contentDocument;
-    if(!d)return;
-    const style=d.createElement('style');
-    style.textContent=`
-      html,body{width:100%!important;height:100%!important;min-height:0!important;margin:0!important;overflow:hidden!important;background:#050505!important}
-      body{display:block!important;padding:0!important}
-      .phone{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;padding:0!important;border-radius:0!important;background:#050505!important;box-shadow:none!important;transform:none!important}
-      .screen{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;overflow:hidden!important}
-    `;
-    d.head.appendChild(style);
-  }catch(e){console.error(e)}
-});
-</script>
+<iframe id="app" src="./v10-3-0.html" title="DIMSPACE Mobile v10.3.0"></iframe>
 </body>
 </html>

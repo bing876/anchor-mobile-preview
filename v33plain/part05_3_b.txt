@@ -1,0 +1,70 @@
+ttribute('aria-hidden','true');
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.style.display='none';
+    detailMedia.src='';
+
+    document.body.classList.remove('detail-mode');
+    appRoot.classList.remove('detail-open');
+
+    resetCenterProgress(true);
+  }
+
+  function closeMinimalDetail(animated=true){
+    if(!detailOpen) return;
+
+    if(!animated){
+      finishCloseDetail();
+      return;
+    }
+
+    detailView.style.transition='transform .28s cubic-bezier(.18,.72,.26,1)';
+    detailView.style.transform='translate3d(100%,0,0)';
+
+    let finished=false;
+    const done=()=>{
+      if(finished) return;
+      finished=true;
+      detailView.removeEventListener('transitionend',done);
+      finishCloseDetail();
+    };
+
+    detailView.addEventListener('transitionend',done);
+    setTimeout(done,340);
+  }
+
+  detailBackBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    closeMinimalDetail(true);
+  });
+
+  detailView.addEventListener('pointerdown',e=>{
+    if(!detailOpen || e.target.closest('.detail-back')) return;
+
+    detailPointer=e.pointerId;
+    detailStartX=e.clientX;
+    detailStartY=e.clientY;
+    detailLastX=e.clientX;
+    detailLastT=performance.now();
+    detailVelocityX=0;
+    detailSwipeActive=false;
+
+    try{detailView.setPointerCapture(e.pointerId)}catch(_){}
+  });
+
+  detailView.addEventListener('pointermove',e=>{
+    if(!detailOpen || e.pointerId!==detailPointer) return;
+
+    const dx=e.clientX-detailStartX;
+    const dy=e.clientY-detailStartY;
+    const width=Math.max(1,detailView.clientWidth);
+
+    if(!detailSwipeActive){
+      if(Math.abs(dx)<8 && Math.abs(dy)<8) return;
+
+      // Reference behavior: vertical intent cancels the close gesture.
+      if(Math.abs(dy)>Math.abs(dx)){
+        try{detailView.releasePointerCapture(detailPointer)}catch(_){}
+        detailPointer=null;
+        detailSwipeActive=false;
+        return;

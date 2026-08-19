@@ -1,0 +1,576 @@
+=camY;
+      lastT=performance.now();
+      velX=velY=0;
+      gestureAxis='pending';
+      sideIntentFrames=0;
+      twoHorizontalUnlocked=false;
+      twoIntent='pending';
+      if(mode==='two') twoAlignedX=nearestTwoTargetX(camX);
+      surface.classList.add('dragging');
+    }else if(pointers.size===2){
+      tapCandidateIndex=-1;
+      tapMoved=true;
+      dragId=null;
+      beginPinch();
+    }
+  });
+
+  surface.addEventListener('pointermove',e=>{
+    if(!pointers.has(e.pointerId))return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+    if(pointers.size===2){
+      updatePinch();
+      e.preventDefault();
+      return;
+    }
+
+    if(e.pointerId!==dragId || pinch)return;
+
+    let dx=e.clientX-dragStartX;
+    let dy=e.clientY-dragStartY;
+    const stepX=e.clientX-lastX;
+    const stepY=e.clientY-lastY;
+
+    if(!tapMoved && Math.hypot(e.clientX-tapStartX,e.clientY-tapStartY)>9){
+      tapMoved=true;
+    }
+
+    if(mode==='borderless' && Math.hypot(dx,dy)>=4){
+      cancelBorderlessCenter(true);
+    }
+
+    if(mode==='borderless'){
+      applyDragResistance(
+        dragStartCamX-dx,
+        dragStartCamY-dy
+      );
+
+      const now=performance.now();
+      const dt=Math.max(1,now-lastT);
+      velX=-(e.clientX-lastX)/dt;
+      velY=-(e.clientY-lastY)/dt;
+
+      lastX=e.clientX;
+      lastY=e.clientY;
+      lastT=now;
+
+      clampCamera();
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    if(mode==='two'){
+      const absDX=Math.abs(dx);
+      const absDY=Math.abs(dy);
+      const absStepX=Math.abs(stepX);
+      const absStepY=Math.abs(stepY);
+
+      if(twoIntent==='pending'){
+        const travel=Math.hypot(dx,dy);
+        if(travel>=4){
+          if(absDX>absDY*1.04){
+            twoIntent='free';
+          }else if(absDY>absDX*1.08){
+            twoIntent='vertical';
+            twoAlignedX=nearestTwoTargetX(camX);
+          }else if(travel>=8){
+            twoIntent=absDX>=absDY ? 'free' : 'vertical';
+            if(twoIntent==='vertical') twoAlignedX=nearestTwoTargetX(camX);
+          }
+        }
+      }
+
+      if(twoIntent==='vertical'){
+        const recentSide=
+          absStepX>=2.0 &&
+          absStepX>Math.max(absStepY*1.12,2.0);
+        const accumulatedSide=
+          absDX>=13 &&
+          absDX>absDY*.58;
+
+        if(recentSide || accumulatedSide) sideIntentFrames++;
+        else sideIntentFrames=Math.max(0,sideIntentFrames-1);
+
+        if(sideIntentFrames>=1){
+          twoIntent='free';
+          dragStartX=e.clientX;
+          dragStartY=e.clientY;
+          dragStartCamX=camX;
+          dragStartCamY=camY;
+          dx=0;
+          dy=0;
+        }else{
+          applyDragResistance(twoAlignedX,dragStartCamY-dy);
+        }
+      }
+
+      if(twoIntent==='free'){
+        // Same direct finger-following geometry as borderless.
+        applyDragResistance(
+          dragStartCamX-dx,
+          dragStartCamY-dy
+        );
+      }
+
+      if(twoIntent==='pending'){
+        applyDragResistance(twoAlignedX,dragStartCamY-dy);
+      }
+
+      const now=performance.now();
+      const dt=Math.max(1,now-lastT);
+      const rawVX=-(e.clientX-lastX)/dt;
+      const rawVY=-(e.clientY-lastY)/dt;
+
+      velX=twoIntent==='free'
+        ? velX*.34 + rawVX*.66
+        : 0;
+      velY=velY*.28 + rawVY*.72;
+
+      lastX=e.clientX;
+      lastY=e.clientY;
+      lastT=now;
+
+      clampCamera();
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    const absDX=Math.abs(dx),absDY=Math.abs(dy);
+    const absStepX=Math.abs(stepX),absStepY=Math.abs(stepY);
+
+    if(gestureAxis==='pending' && Math.hypot(dx,dy)>=4){
+      if(mode==='two'){
+        // Default two-column behavior is vertical.
+        // Horizontal only unlocks on a clearly intentional side drag.
+        if(absDX>=12 && absDX>absDY*1.42){
+          gestureAxis='free';
+          twoHorizontalUnlocked=true;
+        }else{
+          gestureAxis='vertical';
+        }
+      }else{
+        gestureAxis=absDY>=absDX*1.28?'vertical':'free';
+      }
+    }
+
+    if(gestureAxis==='vertical'){
+      const recentSide=
+        absStepX>=3.0 &&
+        absStepX>Math.max(absStepY*1.32,3.0);
+
+      const accumulatedSide=
+        absDX>=20 &&
+        absDX>absDY*.78;
+
+      if(recentSide||accumulatedSide)sideIntentFrames++;
+      else sideIntentFrames=Math.max(0,sideIntentFrames-1);
+
+      if(sideIntentFrames>=2){
+        gestureAxis='free';
+        twoHorizontalUnlocked=true;
+        dragStartX=e.clientX;
+        dragStartY=e.clientY;
+        dragStartCamX=camX;
+        dragStartCamY=camY;
+        dx=0;dy=0;
+      }else{
+        // Keep x exactly on the current two-column page while vertically scrolling.
+        const pageW=surface.clientWidth;
+        const lockedX=Math.round(dragStartCamX/pageW)*pageW;
+        applyDragResistance(
+          lockedX,
+          dragStartCamY-dy
+        );
+      }
+    }
+
+    if(gestureAxis==='free'){
+      applyDragResistance(
+        dragStartCamX-dx,
+        dragStartCamY-dy
+      );
+    }
+
+    if(gestureAxis==='pending'){
+      if(mode==='two'){
+        const pageW=surface.clientWidth;
+        const lockedX=Math.round(dragStartCamX/pageW)*pageW;
+        applyDragResistance(lockedX,dragStartCamY-dy);
+      }else{
+        const verticalBias=absDY>absDX;
+        applyDragResistance(
+          dragStartCamX-(verticalBias?dx*.12:dx),
+          dragStartCamY-dy
+        );
+      }
+    }
+
+    const now=performance.now();
+    const dt=Math.max(1,now-lastT);
+    velX=gestureAxis==='vertical'?0:-(e.clientX-lastX)/dt;
+    velY=-(e.clientY-lastY)/dt;
+
+    lastX=e.clientX;lastY=e.clientY;lastT=now;
+
+    render();
+    e.preventDefault();
+  });
+
+  function endPointer(e){
+    const wasDragPointer=e.pointerId===dragId;
+    const tapDistance=Math.hypot(e.clientX-tapStartX,e.clientY-tapStartY);
+    const tapDuration=performance.now()-tapStartTime;
+    const tappedCard=(
+      wasDragPointer &&
+      pointers.size===1 &&
+      tapCandidateIndex>=0 &&
+      !tapMoved &&
+      tapDistance<=9 &&
+      tapDuration<=650 &&
+      !pinch &&
+      !detailOpen
+    ) ? tapCandidateIndex : -1;
+
+    pointers.delete(e.pointerId);
+
+    if(tappedCard>=0){
+      dragId=null;
+      surface.classList.remove('dragging');
+
+      velX=velY=0;
+      tapCandidateIndex=-1;
+      tapMoved=false;
+
+      cancelBorderlessCenter(true);
+      stopMotion();
+      openMinimalDetail(tappedCard);
+      return;
+    }
+
+    tapCandidateIndex=-1;
+    tapMoved=false;
+
+    if(pinch && pointers.size<2){
+      // Enough physical intent commits; otherwise smoothly returns.
+      settlePinch(pinch.progress>=.30);
+      dragId=null;
+      return;
+    }
+
+    if(e.pointerId===dragId){
+      dragId=null;
+      surface.classList.remove('dragging');
+
+      const ix=velX*16.67;
+      const iy=velY*16.67;
+
+      if(mode==='two'){
+        if(twoIntent==='free'){
+          // Free two-column panning behaves like borderless while moving.
+          // Only after kinetic motion stops do we choose the nearest
+          // complete pair of columns.
+          twoRecoveryTargetX=null;
+
+          if(Math.hypot(ix,iy)>.40){
+            inertia(ix,iy,true);
+          }else{
+            scheduleTwoAlignment(150,null);
+          }
+        }else{
+          // Pure vertical scrolling never enters horizontal panning.
+          camX=nearestTwoTargetX(camX);
+
+          if(Math.abs(iy)>.40){
+            inertia(0,iy,false);
+          }else{
+            render();
+          }
+        }
+
+        twoIntent='pending';
+      }else if(Math.hypot(ix,iy)>.55){
+        inertia(ix,iy,false);
+      }else if(mode==='borderless'){
+        scheduleBorderlessCenter(180);
+      }else{
+        springToBounds();
+      }
+    }
+
+    if(pointers.size===1 && !pinch){
+      const [id,p]=[...pointers.entries()][0];
+      dragId=id;
+      dragStartX=lastX=p.x;
+      dragStartY=lastY=p.y;
+      dragStartCamX=camX;
+      dragStartCamY=camY;
+      lastT=performance.now();
+      velX=velY=0;
+      gestureAxis='pending';
+      sideIntentFrames=0;
+      twoHorizontalUnlocked=false;
+      surface.classList.add('dragging');
+    }
+  }
+
+  surface.addEventListener('pointerup',endPointer);
+  surface.addEventListener('pointercancel',endPointer);
+
+  /* =================================================================
+     06 · TRACKPAD / WHEEL
+     ================================================================= */
+  let wheelAxis='pending';
+  let wheelAccumX=0,wheelAccumY=0,wheelSideFrames=0;
+  let wheelTimer=0;
+
+  function resetWheel(){
+    wheelAxis='pending';
+    wheelAccumX=wheelAccumY=0;
+    wheelSideFrames=0;
+  }
+
+  surface.addEventListener('wheel',e=>{
+    if(e.ctrlKey){
+      // Desktop test: ctrl-wheel simulates two-hand scale.
+      const r=surface.getBoundingClientRect();
+      const anchor={x:e.clientX-r.left,y:e.clientY-r.top};
+      const subject=nearestCard(anchor.x,anchor.y);
+      borderlessSubject=subject;
+
+      const from=mode;
+      const to=e.deltaY<0?'borderless':'two';
+      if(to!==from){
+        const fromLayout=from==='two'?twoLayout():borderlessLayout(subject);
+        const toLayout=to==='two'?twoLayout():borderlessLayout(subject);
+        const subjectTo=toLayout[subject];
+
+        layout=toLayout;
+        mode=to;
+        camX=subjectTo.x+subjectTo.w/2-anchor.x;
+        camY=subjectTo.y+subjectTo.h/2-anchor.y;
+        surface.classList.toggle('two',mode==='two');
+        surface.classList.toggle('borderless',mode==='borderless');
+        render();
+      }
+      e.preventDefault();
+      return;
+    }
+
+    stopMotion();
+
+    const dx=e.shiftKey && Math.abs(e.deltaX)<.01?e.deltaY:e.deltaX;
+    const dy=e.shiftKey && Math.abs(e.deltaX)<.01?0:e.deltaY;
+
+    if(mode==='borderless'){
+      cancelBorderlessCenter(true);
+      applyDragResistance(camX+dx,camY+dy);
+      render();
+
+      clearTimeout(wheelTimer);
+      wheelTimer=setTimeout(()=>{
+        scheduleBorderlessCenter(180);
+        resetWheel();
+      },140);
+
+      e.preventDefault();
+      return;
+    }
+
+    wheelAccumX+=Math.abs(dx);
+    wheelAccumY+=Math.abs(dy);
+
+    if(wheelAxis==='pending' && wheelAccumX+wheelAccumY>=4){
+      wheelAxis=wheelAccumY>=wheelAccumX*1.34?'vertical':'free';
+    }
+
+    if(wheelAxis==='vertical'){
+      const side=Math.abs(dx)>=2.5 && Math.abs(dx)>Math.max(Math.abs(dy)*1.10,2.5);
+      const accumulated=wheelAccumX>=18 && wheelAccumX>wheelAccumY*.34;
+
+      if(side||accumulated)wheelSideFrames++;
+      else wheelSideFrames=Math.max(0,wheelSideFrames-1);
+
+      if(wheelSideFrames>=2)wheelAxis='free';
+    }
+
+    if(mode==='two'){
+      if(wheelAxis==='vertical' || wheelAxis==='pending'){
+        const alignedX=nearestTwoTargetX(camX);
+        applyDragResistance(alignedX,camY+dy);
+      }else{
+        // Explicit lateral trackpad intent: free like borderless.
+        applyDragResistance(camX+dx,camY+dy);
+      }
+
+      render();
+
+      clearTimeout(wheelTimer);
+      wheelTimer=setTimeout(()=>{
+        if(wheelAxis==='free'){
+          // Horizontal movement happened: recover from final position.
+          twoRecoveryTargetX=null;
+          scheduleTwoAlignment(150,null);
+        }else{
+          // Vertical scrolling remains on the current clean two-column grid.
+          camX=nearestTwoTargetX(camX);
+          render();
+        }
+
+        resetWheel();
+      },180);
+
+      e.preventDefault();
+      return;
+    }
+
+    if(wheelAxis==='vertical'){
+      applyDragResistance(camX,camY+dy);
+    }else{
+      applyDragResistance(camX+dx,camY+dy);
+    }
+
+    render();
+
+    clearTimeout(wheelTimer);
+    wheelTimer=setTimeout(()=>{
+      springToBounds();
+      resetWheel();
+    },120);
+
+    e.preventDefault();
+  },{passive:false});
+
+  /* =================================================================
+     07 · DESKTOP TEST SHORTCUTS
+     3 = borderless reference layer
+     2 = two-column
+     ================================================================= */
+  function keyboardMorph(toMode){
+    if(toMode===mode)return;
+
+    const anchor={x:surface.clientWidth/2,y:surface.clientHeight*.48};
+    const subject=nearestCard(anchor.x,anchor.y);
+    borderlessSubject=subject;
+
+    const fromLayout=mode==='two'?twoLayout():borderlessLayout(subject);
+    const toLayout=toMode==='two'?twoLayout():borderlessLayout(subject);
+    const start=performance.now();
+    const duration=520;
+    const fromMode=mode;
+
+    stopMotion();
+    surface.classList.add('pinch-live');
+
+    function tick(now){
+      const t=Math.min(1,(now-start)/duration);
+      const p=1-Math.pow(1-t,4);
+      morphVisualAmount=toMode==='borderless' ? p : 1-p;
+      layout=blendedLayout(fromLayout,toLayout,p);
+
+      const s=layout[subject];
+      camX=s.x+s.w/2-anchor.x;
+      camY=s.y+s.h/2-anchor.y;
+
+      surface.classList.toggle('borderless',toMode==='borderless' || p>.08);
+      surface.classList.toggle('two',fromMode==='two' && p<=.08);
+
+      render();
+
+      if(t<1){
+        settleRAF=requestAnimationFrame(tick);
+      }else{
+        settleRAF=0;
+        mode=toMode;
+        layout=toLayout;
+        surface.classList.toggle('two',mode==='two');
+        surface.classList.toggle('borderless',mode==='borderless');
+        surface.classList.remove('pinch-live');
+        morphVisualAmount=null;
+        clampCamera();
+        render();
+
+        if(mode==='borderless') scheduleBorderlessCenter(320);
+        else { resetCenterProgress(true); scheduleTwoAlignment(150,null); }
+      }
+    }
+    settleRAF=requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('keydown',e=>{
+    if(e.key==='3')keyboardMorph('borderless');
+    if(e.key==='2')keyboardMorph('two');
+  });
+
+
+
+
+
+
+
+  /* =================================================================
+     08 · FROZEN CHROME GUARD
+     ================================================================= */
+  document.querySelectorAll('.topbar button,.bottom button').forEach(btn=>{
+    btn.addEventListener('pointerdown',e=>e.stopPropagation());
+    btn.addEventListener('pointermove',e=>e.stopPropagation());
+    btn.addEventListener('pointerup',e=>e.stopPropagation());
+  });
+
+  const centerBtn=document.querySelector('.bottom .center');
+  if(centerBtn){
+    centerBtn.addEventListener('click',e=>{
+      e.preventDefault();
+      centerBtn.animate(
+        [{transform:'scale(1)'},{transform:'scale(.965)'},{transform:'scale(1)'}],
+        {duration:180,easing:'ease-out'}
+      );
+    });
+  }
+
+  const tabs=[...document.querySelectorAll('.tab')];
+  tabs.forEach(tab=>tab.addEventListener('click',()=>{
+    tabs.forEach(t=>t.classList.toggle('active',t===tab));
+  }));
+
+  /* =================================================================
+     09 · INIT / RESIZE
+     ================================================================= */
+  function resetLayout(){
+    layout=mode==='two'?twoLayout():borderlessLayout(borderlessSubject);
+    clampCamera();
+    applyLayout(layout,true);
+  }
+
+  appRoot.classList.add('section-home-active');
+
+  // Render immediately first. Some embedded preview environments initialize
+  // ResizeObserver late or do not expose it at all.
+  resetLayout();
+
+  if('ResizeObserver' in window){
+    const resizeObserver=new ResizeObserver(()=>{
+      if(surface.clientWidth>0 && surface.clientHeight>0){
+        resetLayout();
+      }
+    });
+    resizeObserver.observe(surface);
+  }else{
+    window.addEventListener('resize',resetLayout,{passive:true});
+  }
+
+  // One extra frame after the iframe/layout has received its final size.
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      if(surface.clientWidth>0 && surface.clientHeight>0) resetLayout();
+    });
+  });
+})();
+</script>
+</body>
+</html>
+
+<style>
+</style>

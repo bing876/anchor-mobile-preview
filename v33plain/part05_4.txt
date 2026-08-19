@@ -1,0 +1,138 @@
+     }
+
+      // Rightward rollback starts only after clear intent.
+      if(dx<=10) return;
+
+      detailSwipeActive=true;
+      detailView.style.transition='none';
+    }
+
+    const follow=Math.max(0,Math.min(width*.92,dx));
+    detailView.style.transform=`translate3d(${follow}px,0,0)`;
+
+    const now=performance.now();
+    const dt=Math.max(1,now-detailLastT);
+    detailVelocityX=(e.clientX-detailLastX)/dt;
+    detailLastX=e.clientX;
+    detailLastT=now;
+
+    e.preventDefault();
+  });
+
+  function endDetailSwipe(e){
+    if(e.pointerId!==detailPointer) return;
+
+    const width=Math.max(1,detailView.clientWidth);
+    const dx=Math.max(0,e.clientX-detailStartX);
+    const shouldClose=
+      detailSwipeActive &&
+      dx>Math.min(94,width*.22);
+
+    detailPointer=null;
+
+    if(shouldClose){
+      detailView.style.transition='transform .28s cubic-bezier(.18,.72,.26,1)';
+      detailView.style.transform='translate3d(100%,0,0)';
+
+      let finished=false;
+      const done=()=>{
+        if(finished) return;
+        finished=true;
+        detailView.removeEventListener('transitionend',done);
+        finishCloseDetail();
+      };
+
+      detailView.addEventListener('transitionend',done);
+      setTimeout(done,340);
+      return;
+    }
+
+    if(detailSwipeActive){
+      detailView.style.transition='transform .22s cubic-bezier(.2,.72,.24,1)';
+      detailView.style.transform='translate3d(0,0,0)';
+      setTimeout(()=>{
+        if(detailOpen) detailView.style.transition='none';
+      },240);
+    }
+
+    detailSwipeActive=false;
+  }
+
+  detailView.addEventListener('pointerup',endDetailSwipe);
+  detailView.addEventListener('pointercancel',endDetailSwipe);
+
+  /* =================================================================
+     04 · CONTINUOUS PINCH MORPH
+     - spread from TWO: current subject holds position; neighbors expand outward.
+     - pinch from BORDERLESS: same subject holds position; neighbors pack inward.
+     No page transition; both are the same world.
+     ================================================================= */
+  function beginPinch(){
+    if(pointers.size!==2)return;
+
+    cancelBorderlessCenter(true);
+    stopMotion();
+
+    const [a,b]=[...pointers.values()];
+    const rect=surface.getBoundingClientRect();
+    const anchor={
+      x:(a.x+b.x)/2-rect.left,
+      y:(a.y+b.y)/2-rect.top
+    };
+    const distance=Math.hypot(a.x-b.x,a.y-b.y);
+
+    const subject=nearestCard(anchor.x,anchor.y);
+    borderlessSubject=subject;
+
+    const fromMode=mode;
+    const toMode=fromMode==='two'?'borderless':'two';
+
+    const fromLayout=fromMode==='two'?twoLayout():borderlessLayout(subject);
+    const toLayout=toMode==='two'?twoLayout():borderlessLayout(subject);
+
+    // Re-anchor current geometry to exactly the stored mode layout.
+    layout=fromLayout;
+
+    surface.classList.add('pinch-live');
+
+    pinch={
+      startDistance:distance,
+      fromMode,
+      toMode,
+      fromLayout,
+      toLayout,
+      subject,
+      anchor,
+      progress:0
+    };
+
+    surface.classList.add('dragging');
+  }
+
+  function updatePinch(){
+    if(!pinch || pointers.size!==2)return;
+
+    const [a,b]=[...pointers.values()];
+    const rect=surface.getBoundingClientRect();
+    const center={
+      x:(a.x+b.x)/2-rect.left,
+      y:(a.y+b.y)/2-rect.top
+    };
+    const distance=Math.hypot(a.x-b.x,a.y-b.y);
+
+    // from TWO: spread -> 1
+    // from BORDERLESS: pinch together -> 1
+    let progress;
+    if(pinch.fromMode==='two'){
+      progress=(distance/pinch.startDistance-1)/.40;
+    }else{
+      progress=(1-distance/pinch.startDistance)/.34;
+    }
+    progress=Math.max(0,Math.min(1,progress));
+    pinch.progress=progress;
+
+    layout=blendedLayout(pinch.fromLayout,pinch.toLayout,progress);
+
+    // Subject stays under the two-hand center throughout the morph.
+    const subjectPos=layout[pinch.subject];
+    camX=subjectPos.x+subjectPo

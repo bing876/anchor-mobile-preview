@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>DIMSPACE Mobile · v10.3.0 · App Content Only</title>
+<style>
+/* =====================================================================
+   00 · FROZEN SHELL
+   顶部状态栏、顶部导航、底部导航的文字 / icon / 几何保持冻结。
+   后续 Renderer 不允许改动本区。
+   ===================================================================== */
+:root{
+  --outer-w:393px;
+  --screen-w:393px;
+  --screen-h:852px;
+
+  /* 393x852 mobile baseline. Values are proportional to the
+     original frozen shell, but now scale with the real phone width. */
+  --safe-top:13.41cqw;
+  --safe-bottom:7.73cqw;
+  --nav-h:10cqw;
+  --touch:10cqw;
+  --side:2.59cqw;
+  --menu-icon:5.52cqw;
+  --search-icon:5.86cqw;
+  --tab-size:3.79cqw;
+  --bottom-core:9.75cqw;
+  --bottom-label-size:3.56cqw;
+  --bottom-bg-extra:.98cqw;
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+
+  --gap:1px;
+  --separator:rgba(255,255,255,.20);
+  --morph-ms:560ms;
+  --morph-ease:cubic-bezier(.16,.78,.18,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  min-height:0;
+  background:#0a0a0b;
+  color:#fff;
+  font-family:var(--font);
+}
+body{
+  width:100%;
+  height:100%;
+  min-height:0;
+  display:block;
+  overflow:hidden;
+  padding:0;
+}
+.phone{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  padding:0;
+  border-radius:0;
+  background:#050505;
+  box-shadow:none;
+}
+.screen{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border-radius:0;
+  overflow:hidden;
+  background:#050505;
+  container-type:inline-size;
+}
+.status-lock{
+  position:absolute;left:0;right:0;top:0;height:var(--safe-top);
+  z-index:2147483647;display:flex;align-items:flex-start;justify-content:space-between;
+  padding:2.29cqw 3.56cqw 0;color:#fff;pointer-events:none;background:transparent
+}
+.status-time{font-size:3.82cqw;font-weight:700;line-height:1}
+.status-right{display:flex;align-items:center;gap:1.55cqw}
+.signal{display:flex;gap:2px;align-items:flex-end}
+.signal i{display:block;width:.76cqw;border-radius:99px;background:#8a8d93}
+.signal i:nth-child(1){height:1.02cqw;opacity:.5}
+.signal i:nth-child(2){height:1.53cqw;opacity:.65}
+.signal i:nth-child(3){height:2.04cqw;opacity:.82}
+.signal i:nth-child(4){height:2.55cqw}
+.wifi{width:4.33cqw;height:3.31cqw;display:block}
+.battery{
+  min-width:6.87cqw;height:4.07cqw;padding:0 1.53cqw;border-radius:2.04cqw;background:#fff;color:#111;
+  font-size:3.05cqw;line-height:4.07cqw;font-weight:800;text-align:center
+}
+.app{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:linear-gradient(180deg,#060607 0%,#030304 100%);
+  --bottom-core:clamp(34px,11.2cqw,38px);
+  --bottom-bg-extra:clamp(4px,1.55cqw,6px);
+  --bottom-label-size:clamp(10.9px,3.58cqw,12.2px);
+  --plus-w:clamp(25.5px,8.55cqw,29.5px);
+  --plus-h:calc(var(--plus-w) * .802)
+}
+
+/* =====================================================================
+   01 · CONTENT WORLD
+   两个模式都属于同一块无边界世界。
+   ===================================================================== */
+.surface{
+  position:absolute;inset:0;z-index:1;overflow:hidden;background:#050505;
+  touch-action:none;
+  cursor:default
+}
+.surface.dragging{cursor:default}
+.world{
+  position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;
+  transform:translate3d(0,0,0);will-change:transform
+}
+.card{
+  position:absolute;left:0;top:0;overflow:hidden;border-radius:0;background:#0a0a0a;
+  contain:layout paint style;will-change:transform,width,height;
+  transition:
+    transform var(--morph-ms) var(--morph-ease),
+    width var(--morph-ms) var(--morph-ease),
+    height var(--morph-ms) var(--morph-ease)
+}
+.card.instant{transition:none!important}
+.card img{
+  width:100%;height:100%;display:block;object-fit:cover;object-position:center;
+  pointer-events:none;
+  -webkit-user-drag:none;
+  user-drag:none;
+  background:#111;
+  will-change:filter,opacity;
+  transition:filter .18s cubic-bezier(.22,.72,.22,1),opacity .18s cubic-bezier(.22,.72,.22,1)
+}
+/* v38 reference card outline */
+.card{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.05),
+    0 1px 0 rgba(255,255,255,.02);
+}
+.card::after{
+  content:"";
+  position:absolute;
+  z-index:2;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.015) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 61%,rgba(0,0,0,.36) 100%);
+}
+
+/* =====================================================================
+   02 · OBJECT METADATA · v38 REFERENCE
+   第三层直接用参考尺寸；第二层单独缩小，不做数学等比例。
+   ===================================================================== */
+.card-meta{display:none !important}
+
+.type-badge{
+  position:absolute;
+  top:8px;
+  right:10px;
+  width:28px;
+  height:28px;
+  padding:0;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:rgba(11,11,11,.48);
+  color:rgba(238,240,242,.88);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+}
+.type-badge svg{
+  width:15px;height:15px;display:block;fill:none;stroke:currentColor;
+  stroke-width:1.86;stroke-linecap:round;stroke-linejoin:round
+}
+.type-badge .solid{fill:currentColor;stroke:none}
+
+.star-meta{
+  position:absolute;left:11px;bottom:12px;min-height:28px;
+  display:flex;align-items:center;gap:5px
+}
+.star-meta svg{
+  width:18px;height:18px;display:block;overflow:visible;flex:0 0 auto
+}
+.star-path{
+  fill:#dfb13d;stroke:#f7d77c;stroke-width:1.28;
+  stroke-linecap:round;stroke-linejoin:round
+}
+.star-count{
+  font-size:12px;line-height:1;font-weight:650;letter-spacing:-.03em;
+  color:#fff0bd;white-space:nowrap
+}
+
+/* 双列单独的小尺寸 */
+.surface.two .type-badge{
+  top:5px;right:7px;width:20px;height:20px;border-radius:50%;
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)
+}
+.surface.two .type-badge svg{width:11px;height:11px;stroke-width:1.78}
+.surface.two .star-meta{left:7px;bottom:9px;min-height:20px;gap:3px}
+.surface.two .star-meta svg{width:14px;height:14px}
+.surface.two .star-count{font-size:9.5px}
+
+/* =====================================================================
+   03 · BORDERLESS FOCUS · v38 REFERENCE
+   ===================================================================== */
+.ambient-light,
+.edge-dark{
+  position:absolute;inset:0;pointer-events:none;opacity:0;
+  transition:opacity .22s cubic-bezier(.22,.72,.22,1)
+}
+.ambient-light{
+  z-index:8;
+  background:
+    radial-gradient(
+      ellipse at 50% 49%,
+      rgba(255,255,255,.055) 0%,
+      rgba(255,255,255,.03) 18%,
+      rgba(255,255,255,.012) 30%,
+      rgba(255,255,255,0) 43%
+    );
+  mix-blend-mode:screen
+}
+.edge-dark{
+  z-index:9;
+  background:
+    radial-gradient(
+      ellipse at 50% 49%,
+      rgba(0,0,0,0) 0%,
+      rgba(0,0,0,0) 31%,
+      rgba(0,0,0,.08) 42%,
+      rgba(0,0,0,.22) 55%,
+      rgba(0,0,0,.42) 68%,
+      rgba(0,0,0,.66) 80%,
+      rgba(0,0,0,.84) 90%,
+      rgba(0,0,0,.97) 100%
+    )
+}
+.surface.borderless .ambient-light,
+.surface.borderless .edge-dark{opacity:1}
+
+/* =====================================================================
+   04 · FROZEN TOP
+   上一轮已确认：不再加顶部额外泛光。
+   ===================================================================== */
+.top-eat-shadow{
+  display:none !important
+}
+.topbar{
+  position:absolute;top:var(--safe-top);left:0;right:0;height:var(--nav-h);
+  background:transparent;z-index:20
+}
+.top-left,.top-right{
+  position:absolute;top:0;height:100%;display:flex;align-items:center;z-index:2
+}
+.top-left{left:var(--side)}.top-right{right:var(--side)}
+.icon-btn{
+  appearance:none;border:0;background:transparent;color:#fff;width:var(--touch);height:var(--touch);
+  padding:0;margin:0;display:grid;place-items:center;border-radius:9.786px;
+  transform:translateY(-3px)
+}
+.icon-btn.menu svg{width:var(--menu-icon);height:var(--menu-icon)}
+.icon-btn.search svg{width:var(--search-icon);height:var(--search-icon)}
+.tabs{
+  position:absolute;left:50%;top:0;height:100%;width:max-content;transform:translateX(-50%);
+  display:flex;align-items:center;justify-content:center;gap:clamp(10px,3.6cqw,14px);white-space:nowrap
+}
+.tab{
+  appearance:none;border:0;background:transparent;color:rgba(255,255,255,.80);
+  padding:0;width:clamp(28px,9.2cqw,34px);height:100%;display:inline-flex;
+  align-items:center;justify-content:center;font-family:var(--font);font-size:var(--tab-size);
+  font-weight:640;line-height:1;letter-spacing:-.01em;opacity:.96
+}
+.tab.active{
+  color:#fff;font-weight:730;opacity:1;text-shadow:none;
+  filter:brightness(1.04)
+}
+
+/* =====================================================================
+   05 · FROZEN BOTTOM
+   仅沿用上一轮确认后的“更浅透”背景。
+   ===================================================================== */
+.bottom{
+  position:absolute;left:0;right:0;bottom:0;
+  height:calc(var(--bottom-core) + var(--safe-bottom) + var(--bottom-bg-extra));
+  padding-top:var(--bottom-bg-extra);padding-bottom:var(--safe-bottom);
+  background:linear-gradient(
+    180deg,
+    rgba(0,0,2,.64) 0%,
+    rgba(0,0,2,.75) 36%,
+    rgba(0,0,2,.87) 100%
+  );
+  backdrop-filter:blur(22px) saturate(1.14);
+  -webkit-backdrop-filter:blur(22px) saturate(1.14);
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  z-index:30;border-top:1px solid rgba(255,255,255,.045);
+  box-shadow:0 -7px 20px rgba(0,0,0,.17)
+}
+.bottom button{
+  appearance:none;border:0;background:transparent;color:rgba(255,255,255,.68);
+  padding:0;margin:0;height:var(--bottom-core);min-width:0;
+  display:flex;align-items:center;justify-content:center
+}
+.bottom .nav.active{color:#fff}
+.nav span{
+  display:block;text-align:center;font-family:var(--font);
+  font-size:var(--bottom-label-size);font-weight:610;line-height:1;
+  letter-spacing:-.01em;transform:translateY(-.15px)
+}
+.center svg{
+  width:var(--plus-w);height:var(--plus-h);display:block;flex:none;transform:translateY(-2.5px)
+}
+
+/* =====================================================================
+   06 · ACCESSIBILITY
+   ===================================================================== */
+
+.surface.pinch-live .card,
+.surface.pinch-live .type-badge,
+.surface.pinch-live .star-meta{
+  transition:none !important;
+}
+
+@media(prefers-contrast:more){
+  :root{--separator:rgba(255,255,255,.34)}
+  .type-badge{
+    background:rgba(10,10,10,.66);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.26)
+  }
+  .edge-dark{
+    background:
+      radial-gradient(
+        ellipse at 50% 48%,
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,.02) 34%,
+        rgba(0,0,0,.12) 58%,
+        rgba(0,0,0,.34) 79%,
+        rgba(0,0,0,.64) 100%
+      )
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  :root{--morph-ms:1ms}
+}
+@media(max-width:420px){
+  body{padding:10px}
+}
+</style>
+
+<style>
+html,body{
+  width:100%;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+  background:#050505;
+}
+.phone{
+  width:100vw !important;
+  height:100vh !important;
+  height:100dvh !important;
+  max-width:none !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+.screen{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  border-radius:0 !important;
+}
+</style>
+
+
+<style id="mobile-proportional-baseline">
+html,body{
+  width:100%;
+  height:100%;
+  min-height:0;
+  margin:0;
+  overflow:hidden;
+  background:#050505;
+}
+body{
+  padding:0 !important;
+  display:block !important;
+}
+.phone{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  height:100dvh !important;
+  max-width:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  background:#050505 !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+.screen{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+  container-type:inline-size !important;
+}
+.app{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+}
+</style>
+
+
+
+
+<style id="borderless-center-progress-fix">
+/* 无边界中心作品底部进度条 */
+.center-progress{
+  position:absolute;
+  z-index:10;
+  left:0;
+  right:0;
+  bottom:0;
+  height:2px;
+  overflow:hidden;
+  background:rgba(255,255,255,.14);
+  opacity:0;
+  pointer-events:none;
+}
+.center-progress i{
+  display:block;
+  width:0%;
+  height:100%;
+  background:rgba(255,255,255,.94);
+  border-radius:0;
+  box-shadow:none;
+}
+.surface.borderless .card.center-progress-active .center-progress,
+.surface.borderless .card.center-progress-ready .center-progress{
+  opacity:1;
+}
+.surface.two .center-progress{
+  display:none !important;
+}
+</style>
+
+
+<style id="v7-10-minimal-detail-fix">
+/* Full internal page: pure black, nothing except back */
+.detail-view{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:2147483645;
+  display:none;
+  overflow:hidden;
+  background:#000;
+  color:#fff;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  will-change:transform;
+}
+.detail-view.open{
+  display:block !important;
+}
+.detail-media{
+  display:none !important;
+}
+.detail-back{
+  position:absolute;
+  z-index:4;
+  left:11px;
+  top:calc(var(--safe-top) - 5px);
+  width:34px;
+  height:34px;
+  padding:0;
+  margin:0;
+  border:0;
+  outline:0;
+  border-radius:0;
+  background:transparent;
+  color:rgba(255,255,255,.98);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.detail-back svg{
+  width:23px;
+  height:23px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.05;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* When internal page is open, literally everything else disappears. */
+body.detail-mode .status-lock,
+body.detail-mode .top-eat-shadow,
+body.detail-mode .topbar,
+body.detail-mode .bottom{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body.detail-mode .surface{
+  pointer-events:none !important;
+}
+</style>
+
+
+<style id="v7-11-entry-rules">
+/* Progress is a dwell-only affordance for borderless mode. */
+.surface.two .center-progress,
+.surface.two .card.center-progress-active .center-progress,
+.surface.two .card.center-progress-ready .center-progress{
+  display:none !important;
+  opacity:0 !important;
+}
+</style>
+
+
+<style id="v7-15-pages">
+.section-view{
+  position:absolute;
+  inset:0;
+  z-index:15;
+  display:none;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:
+    calc(var(--safe-top) + var(--nav-h) + 3.4cqw)
+    4.2cqw
+    calc(var(--bottom-core) + var(--safe-bottom) + 5.2cqw);
+  background:linear-gradient(180deg,#070708 0%,#040405 100%);
+}
+.section-view.active{display:block}
+.section-view::-webkit-scrollbar{display:none}
+.section-shell{display:flex;flex-direction:column;gap:3.2cqw;min-height:100%}
+.section-title{
+  color:#fff;
+  font-size:6.2cqw;
+  line-height:1.02;
+  font-weight:700;
+  letter-spacing:-.03em;
+}
+.section-sub{
+  margin-top:1.3cqw;
+  color:rgba(255,255,255,.58);
+  font-size:3.45cqw;
+  line-height:1.42;
+  max-width:76%;
+}
+.section-card{
+  border-radius:4.2cqw;
+  padding:4.2cqw;
+  background:rgba(255,255,255,.045);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.section-card h3{
+  margin:0 0 1.4cqw;
+  color:#fff;
+  font-size:4.2cqw;
+  line-height:1.12;
+  font-weight:650;
+}
+.section-card p{
+  margin:0;
+  color:rgba(255,255,255,.66);
+  font-size:3.45cqw;
+  line-height:1.42;
+}
+.section-row{display:grid;grid-template-columns:1fr 1fr;gap:2.8cqw}
+.mini-item{
+  min-height:24cqw;
+  border-radius:3.6cqw;
+  padding:3.6cqw;
+  background:rgba(255,255,255,.035);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.mini-item .k{font-size:3cqw;color:rgba(255,255,255,.48)}
+.mini-item .v{font-size:4.05cqw;color:#fff;font-weight:620;line-height:1.14}
+
+.app.section-home-active .surface,
+.app.section-home-active .top-eat-shadow{display:block}
+.app:not(.section-home-active) .surface,
+.app:not(.section-home-active) .top-eat-shadow{display:none !important}
+.app:not(.section-home-active) .tabs{opacity:.32;pointer-events:none}
+
+.bottom .nav,.bottom .center{
+  transition:transform .18s ease,color .18s ease,opacity .18s ease;
+}
+.bottom .nav:active,.bottom .center:active{transform:scale(.965)}
+</style>
+
+
+<style id="bottom-ref-v7-24">
+.bottom.bottom-ref{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:30;
+
+  height:calc(var(--safe-bottom) + 13.2cqw);
+  padding:0 0 var(--safe-bottom);
+
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  align-items:center;
+
+  background:rgba(3,3,4,.91);
+  border-top:1px solid rgba(255,255,255,.055);
+
+  backdrop-filter:blur(24px) saturate(1.08);
+  -webkit-backdrop-filter:blur(24px) saturate(1.08);
+
+  box-shadow:
+    0 -10px 26px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.bottom.bottom-ref button{
+  position:relative;
+  appearance:none;
+  border:0;
+  outline:0;
+  margin:0;
+  padding:0;
+
+  width:100%;
+  height:13.2cqw;
+
+  display:grid;
+  place-items:center;
+
+  color:rgba(255,255,255,.38);
+  background:transparent;
+
+  -webkit-tap-highlight-color:transparent;
+}
+
+.bottom.bottom-ref .nav.active{
+  color:#fff;
+}
+
+.bottom.bottom-ref .nav-icon{
+  display:block;
+  width:4.8cqw;
+  height:4.8cqw;
+  overflow:visible;
+
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.25;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+
+  transform:translateY(-.35cqw);
+}
+
+.bottom.bottom-ref .home-icon{
+  width:4.55cqw;
+  height:4.55cqw;
+  stroke:none;
+}
+.bottom.bottom-ref .home-fill{
+  fill:currentColor;
+}
+
+.bottom.bottom-ref .compass-icon{
+  width:4.95cqw;
+  height:4.95cqw;
+  

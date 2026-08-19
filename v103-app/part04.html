@@ -1,0 +1,592 @@
+&q=80&w=1600',
+    'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&fm=jpg&q=80&w=1600'
+  ];
+  const TYPES=['video','story','story','app','story','video','app','story','video','story'];
+
+  const FEED_HEADLINES=[
+    '通勤也想穿得轻一点',
+    '今天的光刚好落在这里',
+    '周末上山只带这些',
+    '这一桌值得再做一次',
+    '最近单曲循环的一首',
+    '把桌面留给重要的事',
+    '这套搭配比想象中好穿',
+    '我们把方案改到了最后一版',
+    '山里起风的时候',
+    '下一趟想去更远一点',
+    '把灵感先存下来',
+    '一直开到天快黑',
+    '最近反复在看的设计',
+    '一个很好用的小工具',
+    '今天会议只留下这三个决定',
+    '把办公室再收干净一点',
+    '今晚还想再吃一次',
+    '最后这一层最出彩',
+    '很久没有这样拍照了',
+    '窗边真的更适合它'
+  ];
+
+  const FEED_VIEW_COUNTS=[
+    '100','1000','1w','10w','100w','2211w',
+    '327','6800','2.4w','18w','862w','1240w',
+    '521','3000','6.8w','73w','506w','1005w',
+    '972','8.1w'
+  ];
+
+  const COVER_TYPE_KINDS=new Set(['video','music','tool','reader','app']);
+  const OBJECTS=[
+    {
+      kind:'wardrobe', label:'穿搭', accent:'#d99079',
+      title:'今日穿搭', subtitle:'把这套造型保存到自己的衣橱，也可以继续找相似单品。',
+      primary:'加入衣橱', secondary:'找相似',
+      meta:['3 件单品','暖色系','通勤']
+    },
+    {
+      kind:'portrait', label:'照片', accent:'#d3879e',
+      title:'人物瞬间', subtitle:'这是一张人物照片。进入后优先保留人物、关系和相册语义。',
+      primary:'加入相册', secondary:'人物',
+      meta:['人物','生活记录','私密']
+    },
+    {
+      kind:'place', label:'地点照片', accent:'#7398c8',
+      title:'山野路线', subtitle:'识别为旅行地点后，照片本身直接变成地点入口。',
+      primary:'查看地点', secondary:'路线',
+      meta:['自然','徒步','旅行']
+    },
+    {
+      kind:'food', label:'美食', accent:'#d49b64',
+      title:'今日餐桌', subtitle:'从一张食物照片继续到菜品、收藏和附近餐厅。',
+      primary:'查看菜品', secondary:'收藏',
+      meta:['美食','附近','今日']
+    },
+    {
+      kind:'music', label:'音乐', accent:'#a277c6',
+      title:'正在播放', subtitle:'声音对象进入播放器，不需要再去找一个音乐 App 页面。',
+      primary:'播放', secondary:'歌词',
+      meta:['音乐','3:42','空间音频']
+    },
+    {
+      kind:'workspace', label:'工作', accent:'#6f8fc0',
+      title:'专注工作台', subtitle:'这张工作场景直接展开为任务、文件和当前上下文。',
+      primary:'继续工作', secondary:'任务',
+      meta:['项目','文件','待处理']
+    },
+    {
+      kind:'wardrobe', label:'衣橱', accent:'#d6a87a',
+      title:'我的衣橱', subtitle:'服装对象进入搭配与整理工具。',
+      primary:'试穿组合', secondary:'收藏',
+      meta:['上装','搭配','清单']
+    },
+    {
+      kind:'workspace', label:'团队', accent:'#6e9a87',
+      title:'团队协作', subtitle:'团队照片进入当前项目空间，而不是只作为一张照片。',
+      primary:'进入项目', secondary:'成员',
+      meta:['协作','4 人','进行中']
+    },
+    {
+      kind:'place', label:'自然', accent:'#6f9e80',
+      title:'山野观察', subtitle:'自然照片进入路线、地点和季节信息。',
+      primary:'打开地图', secondary:'收藏',
+      meta:['自然','路线','季节']
+    },
+    {
+      kind:'place', label:'旅行', accent:'#7ba3c2',
+      title:'下一站', subtitle:'把旅行图直接加入今天或未来的行程。',
+      primary:'加入行程', secondary:'附近',
+      meta:['旅行','计划','地点']
+    },
+    {
+      kind:'reader', label:'代码文章', accent:'#8795c7',
+      title:'代码阅读', subtitle:'技术内容直接进入阅读与解释界面。',
+      primary:'继续阅读', secondary:'解释',
+      meta:['技术','12 分钟','可标记']
+    },
+    {
+      kind:'video', label:'旅行视频', accent:'#b98c70',
+      title:'公路片段', subtitle:'视频对象直接进入沉浸播放器。',
+      primary:'继续播放', secondary:'路线',
+      meta:['视频','08:32','旅行']
+    },
+    {
+      kind:'reader', label:'设计', accent:'#c79a75',
+      title:'设计灵感', subtitle:'把视觉素材转成可读、可收藏、可继续创作的设计对象。',
+      primary:'保存灵感', secondary:'创作',
+      meta:['设计','灵感','素材']
+    },
+    {
+      kind:'tool', label:'应用', accent:'#66bf8a',
+      title:'Web 工具', subtitle:'应用对象打开后直接进入工具工作流。',
+      primary:'运行工具', secondary:'历史',
+      meta:['Application','本地处理','可继续']
+    },
+    {
+      kind:'workspace', label:'会议', accent:'#7c91b4',
+      title:'会议空间', subtitle:'工作照片直接展开为会议纪要与下一步。',
+      primary:'查看纪要', secondary:'待办',
+      meta:['会议','3 项待办','团队']
+    },
+    {
+      kind:'workspace', label:'办公空间', accent:'#76988a',
+      title:'办公室', subtitle:'空间对象可以承接地点、成员和当前项目。',
+      primary:'进入空间', secondary:'成员',
+      meta:['空间','团队','项目']
+    },
+    {
+      kind:'food', label:'餐厅', accent:'#c89766',
+      title:'今晚吃什么', subtitle:'餐厅照片直接进入菜单、路线和预订入口。',
+      primary:'查看菜单', secondary:'路线',
+      meta:['餐厅','4.8','附近']
+    },
+    {
+      kind:'art', label:'创作', accent:'#c1787d',
+      title:'创作画布', subtitle:'艺术素材直接进入一个轻量创作空间。',
+      primary:'继续创作', secondary:'收藏',
+      meta:['艺术','素材','画布']
+    },
+    {
+      kind:'portrait', label:'关系', accent:'#78a18b',
+      title:'朋友与关系', subtitle:'多人照片进入关系与共同记忆，而不是评论区。',
+      primary:'查看共同记录', secondary:'人物',
+      meta:['关系','共同记忆','私密']
+    },
+    {
+      kind:'nature', label:'植物', accent:'#729775',
+      title:'植物识别', subtitle:'自然对象进入识别、养护和记录。',
+      primary:'识别植物', secondary:'记录',
+      meta:['植物','养护','自然']
+    }
+  ];
+
+  const CARD_COUNT=120;
+
+  const surface=document.getElementById('surface');
+  const world=document.getElementById('world');
+  const ambientLight=document.querySelector('.ambient-light');
+  const edgeDark=document.querySelector('.edge-dark');
+  const appRoot=document.querySelector('.app');
+  const detailView=document.getElementById('detailView');
+  const detailBackBtn=document.getElementById('detailBackBtn');
+  const detailObjectBody=document.getElementById('detailObjectBody');
+  const detailKindLabel=document.getElementById('detailKindLabel');
+  const detailKindDot=document.getElementById('detailKindDot');
+  const detailFavoriteBtn=document.getElementById('detailFavoriteBtn');
+  const detailMoreBtn=document.getElementById('detailMoreBtn');
+  const detailTransitionBackdrop=document.getElementById('detailTransitionBackdrop');
+  const detailTransitionCard=document.getElementById('detailTransitionCard');
+  const detailTransitionImage=document.getElementById('detailTransitionImage');
+
+  const sectionViews={
+    daily:document.getElementById('dailyView'),
+    messages:document.getElementById('messageView'),
+    mine:document.getElementById('mineView')
+  };
+  const bottomNavButtons=[...document.querySelectorAll('.bottom .nav[data-section]')];
+  let currentSection='home';
+
+  const cards=[];
+  const pointers=new Map();
+
+  let mode='two';                 // two | borderless
+  let layout=[];
+  let camX=0;
+  let camY=-26;
+
+  let dragId=null;
+  let dragStartX=0,dragStartY=0;
+  let dragStartCamX=0,dragStartCamY=0;
+  let lastX=0,lastY=0,lastT=0;
+  let velX=0,velY=0;
+  let gestureAxis='pending';
+  let sideIntentFrames=0;
+  let twoHorizontalUnlocked=false;
+
+  // two-column gesture intent:
+  // pending -> vertical (x locked) OR free (borderless-like x/y pan)
+  let twoIntent='pending';
+  let twoAlignedX=0;
+
+  // Native click can be swallowed by pointer capture.
+  // Detect card taps at the canvas layer instead.
+  let tapCandidateIndex=-1;
+  let tapStartX=0;
+  let tapStartY=0;
+  let tapStartTime=0;
+  let tapMoved=false;
+  let inertiaRAF=0;
+  let snapRAF=0;
+  let twoAlignTimer=0;
+  let twoRecoveryTargetX=null;
+
+  // Borderless mapping is anchored around the subject that initiated expansion.
+  let borderlessSubject=0;
+
+  // Interactive pinch morph.
+  let pinch=null;
+  let settleRAF=0;
+  let morphVisualAmount=null;
+
+  let borderlessCenterTimer=0;
+  let borderlessCenterRAF=0;
+  let centerProgressCard=-1;
+  let centeredCard=-1;
+
+  let detailOpen=false;
+  let detailPointer=null;
+  let detailStartX=0;
+  let detailStartY=0;
+  let detailLastX=0;
+  let detailLastT=0;
+  let detailVelocityX=0;
+  let detailSwipeActive=false;
+
+  // Reference-style card morph state.
+  let detailMorphBusy=false;
+  let detailSourceCard=null;
+  let detailSourceRect=null;
+  let detailTargetRect=null;
+  let detailTargetRadius=0;
+  let detailSourceRadius=0;
+  let detailSourceImage='';
+
+  function typeIcon(type){
+    if(type==='app'){
+      return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.4"/><path d="M3 8.5h18"/><path d="M7 4v4.5"/><path d="M10.5 4v4.5"/></svg>`;
+    }
+    if(type==='video'){
+      return `<svg viewBox="0 0 24 24"><path class="solid" d="M8.1 5.8c0-.9.98-1.43 1.73-.94l8.7 5.67a1.12 1.12 0 0 1 0 1.88l-8.7 5.67A1.12 1.12 0 0 1 8.1 17.14Z"/></svg>`;
+    }
+    return `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle class="solid" cx="9" cy="9" r="1.65"/><path d="m6.7 17 3.25-3.3a1.6 1.6 0 0 1 2.25-.03l1.4 1.35 1.45-1.5a1.6 1.6 0 0 1 2.3-.02L20 16.2"/></svg>`;
+  }
+
+  function createCard(index){
+    const obj=OBJECTS[index%OBJECTS.length];
+
+    const el=document.createElement('div');
+    el.className='card';
+    el.dataset.index=String(index);
+    el.dataset.type=obj.kind;
+    el.dataset.objectLabel=obj.label;
+
+    const media=document.createElement('div');
+    media.className='cover-media';
+
+    const img=document.createElement('img');
+    img.alt='';
+    img.src=IMAGES[index%IMAGES.length];
+    img.addEventListener('error',()=>{
+      img.onerror=null;
+      img.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iODAwIiB2aWV3Qm94PSIwIDAgNjAwIDgwMCI+CjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyNTMwNGEiLz48c3RvcCBvZmZzZXQ9Ii41IiBzdG9wLWNvbG9yPSIjMTQxYTI3Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDgwOTBjIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdIHdpZHRoPSI2MDAiIGhlaWdodD0iODAwIiBmaWxsPSJ1cmwoI2cpIi8+Cjwvc3ZnPg==';
+    });
+
+    const footer=document.createElement('div');
+    footer.className='media-footer';
+
+    const pause=document.createElement('button');
+    pause.className='media-pause';
+    pause.type='button';
+    pause.tabIndex=-1;
+    pause.setAttribute('aria-hidden','true');
+    pause.dataset.playing='1';
+    pause.innerHTML=`
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 20.2
+                 C11.62 20.2 11.27 20.06 10.98 19.80
+                 C8.05 17.25 5.82 15.18 4.30 13.28
+                 C2.79 11.39 2.05 9.75 2.05 8.18
+                 C2.05 5.62 3.99 3.72 6.58 3.72
+                 C8.10 3.72 9.55 4.43 10.48 5.58
+                 L12 7.42
+                 L13.52 5.58
+                 C14.45 4.43 15.90 3.72 17.42 3.72
+                 C20.01 3.72 21.95 5.62 21.95 8.18
+                 C21.95 9.75 21.21 11.39 19.70 13.28
+                 C18.18 15.18 15.95 17.25 13.02 19.80
+                 C12.73 20.06 12.38 20.2 12 20.2 Z"/>
+      </svg>
+    `;
+
+    const views=document.createElement('div');
+    views.className='media-views';
+    views.innerHTML=`<span>${FEED_VIEW_COUNTS[index%FEED_VIEW_COUNTS.length]}</span>`;
+
+    footer.append(pause,views);
+    media.append(img,footer);
+
+    const progress=document.createElement('div');
+    progress.className='center-progress';
+    progress.innerHTML='<i></i>';
+
+    el.append(media,progress);
+    world.appendChild(el);
+    return el;
+  }
+
+  for(let i=0;i<CARD_COUNT;i++) cards.push(createCard(i));
+
+  /* =================================================================
+     02 · LAYOUT DEFINITIONS
+     ================================================================= */
+  function twoLayout(){
+    const w=surface.clientWidth;
+    const gap=1;
+    const cardW=(w-gap)/2;
+    const cardH=cardW*1.3333;
+    const rowsPerPage=12;
+    const perPage=rowsPerPage*2;
+    const positions=new Array(CARD_COUNT);
+
+    for(let i=0;i<CARD_COUNT;i++){
+      const page=Math.floor(i/perPage);
+      const local=i%perPage;
+      const col=local%2;
+      const row=Math.floor(local/2);
+
+      positions[i]={
+        x:page*w+col*(cardW+gap),
+        y:row*(cardH+gap)+(col===1?8:0),
+        w:cardW,
+        h:cardH
+      };
+    }
+    return positions;
+  }
+
+  function borderlessLayout(subject=borderlessSubject){
+    const w=surface.clientWidth;
+    const gap=1;
+
+    // Strictly from uploaded reference v45:
+    // mobile CARD_W = min(300, app width * .77)
+    // CARD_H = CARD_W * 1.3333
+    const cardW=Math.min(300,w*.77);
+    const cardH=cardW*1.3333;
+    const stepX=cardW+gap;
+    const stepY=cardH+gap;
+
+    const cols=9;
+    const centerCol=4;
+    const positions=new Array(CARD_COUNT);
+
+    // Subject sits at the local grid center. Earlier/later items extend
+    // above/below/left/right instead of "jumping to another page".
+    for(let i=0;i<CARD_COUNT;i++){
+      const q=(i-subject)+centerCol;
+      const col=((q%cols)+cols)%cols;
+      const row=Math.floor(q/cols);
+
+      positions[i]={
+        x:(col-centerCol)*stepX,
+        y:row*stepY,
+        w:cardW,
+        h:cardH
+      };
+    }
+    return positions;
+  }
+
+  function getLayout(currentMode){
+    return currentMode==='two' ? twoLayout() : borderlessLayout();
+  }
+
+  function lerp(a,b,t){return a+(b-a)*t}
+  function smooth(t){return t*t*(3-2*t)}
+
+  function blendedLayout(from,to,t){
+    const p=smooth(Math.max(0,Math.min(1,t)));
+    return from.map((a,i)=>{
+      const b=to[i];
+      return {
+        x:lerp(a.x,b.x,p),
+        y:lerp(a.y,b.y,p),
+        w:lerp(a.w,b.w,p),
+        h:lerp(a.h,b.h,p)
+      };
+    });
+  }
+
+  /* =================================================================
+     03 · RENDER
+     ================================================================= */
+  function render(){
+    world.style.transform=`translate3d(${-camX}px,${-camY}px,0)`;
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+
+    const borderlessAmount=pinch
+      ? (pinch.fromMode==='two' ? pinch.progress : 1-pinch.progress)
+      : (morphVisualAmount!==null ? morphVisualAmount : (mode==='borderless' ? 1 : 0));
+
+    if(ambientLight) ambientLight.style.opacity=borderlessAmount.toFixed(3);
+    if(edgeDark) edgeDark.style.opacity=borderlessAmount.toFixed(3);
+
+    cards.forEach((el,i)=>{
+      const p=layout[i];
+      if(!p)return;
+
+      el.style.width=p.w+'px';
+      el.style.height=p.h+'px';
+      el.style.transform=`translate3d(${p.x}px,${p.y}px,0)`;
+
+      const img=el.querySelector('img');
+      if(!img)return;
+
+      const cx=p.x+p.w/2-camX;
+      const cy=p.y+p.h/2-camY;
+
+      // v38 reference focus geometry and image treatment.
+      const nx=(cx-vw/2)/(vw*.50);
+      const ny=(cy-vh/2)/(vh*.46);
+      const dist=Math.min(1.35,Math.hypot(nx,ny));
+      const raw=Math.max(0,1-dist/1.02);
+      const focus=smooth(raw);
+
+      const targetBrightness=.42+focus*.74;
+      const targetSaturation=.62+focus*.38;
+      const targetContrast=.92+focus*.10;
+      const targetOpacity=.84+focus*.16;
+
+      const brightness=lerp(1,targetBrightness,borderlessAmount);
+      const saturation=lerp(1,targetSaturation,borderlessAmount);
+      const contrast=lerp(1,targetContrast,borderlessAmount);
+      const opacity=lerp(1,targetOpacity,borderlessAmount);
+
+      img.style.filter=
+        `brightness(${brightness.toFixed(3)}) `+
+        `saturate(${saturation.toFixed(3)}) `+
+        `contrast(${contrast.toFixed(3)})`;
+      img.style.opacity=opacity.toFixed(3);
+
+      const glow=.06*focus*borderlessAmount;
+      el.style.boxShadow =
+        `inset 0 0 0 1px rgba(255,255,255,${(.05+.01*borderlessAmount).toFixed(3)}), ` +
+        `0 1px 0 rgba(255,255,255,.02), ` +
+        `0 0 ${Math.round(18*focus*borderlessAmount)}px rgba(255,255,255,${glow.toFixed(3)})`;
+    });
+  }
+
+  function applyLayout(nextLayout,instant=false){
+    layout=nextLayout;
+    cards.forEach(el=>el.classList.toggle('instant',instant));
+    render();
+    requestAnimationFrame(()=>cards.forEach(el=>el.classList.remove('instant')));
+  }
+
+  function cameraBounds(){
+    if(mode==='two'){
+      const w=surface.clientWidth;
+      const cardH=((w-1)/2)*1.3333;
+      const maxY=12*(cardH+1)-surface.clientHeight+100;
+      const pages=Math.ceil(CARD_COUNT/24);
+
+      return {
+        minX:0,
+        maxX:Math.max(0,(pages-1)*w),
+        minY:-28,
+        maxY:Math.max(0,maxY)
+      };
+    }
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+    const xs=layout.map(p=>p.x);
+    const ys=layout.map(p=>p.y);
+    const maxXs=layout.map(p=>p.x+p.w);
+    const maxYs=layout.map(p=>p.y+p.h);
+
+    return {
+      minX:Math.min(...xs)-vw*.58,
+      maxX:Math.max(...maxXs)-vw+vw*.58,
+      minY:Math.min(...ys)-vh*.46,
+      maxY:Math.max(...maxYs)-vh+vh*.46
+    };
+  }
+
+  function clampCamera(){
+    const b=cameraBounds();
+    camX=Math.max(b.minX,Math.min(b.maxX,camX));
+    camY=Math.max(b.minY,Math.min(b.maxY,camY));
+  }
+
+  function resistValue(value,min,max,strength=.24){
+    if(value<min) return min+(value-min)*strength;
+    if(value>max) return max+(value-max)*strength;
+    return value;
+  }
+
+  function applyDragResistance(nextX,nextY){
+    const b=cameraBounds();
+    camX=resistValue(nextX,b.minX,b.maxX,.24);
+    camY=resistValue(nextY,b.minY,b.maxY,.24);
+  }
+
+  function overshoot(){
+    const b=cameraBounds();
+    const ox=camX<b.minX ? camX-b.minX : camX>b.maxX ? camX-b.maxX : 0;
+    const oy=camY<b.minY ? camY-b.minY : camY>b.maxY ? camY-b.maxY : 0;
+    return {b,ox,oy};
+  }
+
+  function springToBounds(){
+    stopMotion();
+
+    const fromX=camX;
+    const fromY=camY;
+    const b=cameraBounds();
+    const toX=Math.max(b.minX,Math.min(b.maxX,fromX));
+    const toY=Math.max(b.minY,Math.min(b.maxY,fromY));
+
+    if(Math.abs(toX-fromX)<.2 && Math.abs(toY-fromY)<.2){
+      camX=toX;
+      camY=toY;
+      render();
+      return;
+    }
+
+    const begun=performance.now();
+    const duration=220;
+
+    function tick(now){
+      const t=Math.min(1,(now-begun)/duration);
+      const e=1-Math.pow(1-t,4);
+
+      camX=lerp(fromX,toX,e);
+      camY=lerp(fromY,toY,e);
+      render();
+
+      if(t<1){
+        snapRAF=requestAnimationFrame(tick);
+      }else{
+        snapRAF=0;
+        camX=toX;
+        camY=toY;
+        render();
+      }
+    }
+
+    snapRAF=requestAnimationFrame(tick);
+  }
+
+  function nearestCard(screenX,screenY){
+    let best=0,bestD=Infinity;
+    layout.forEach((p,i)=>{
+      const cx=p.x+p.w/2-camX;
+      const cy=p.y+p.h/2-camY;
+      const dx=cx-screenX,dy=cy-screenY;
+      const d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    });
+    return best;
+  }
+
+  function setSection(section){
+    currentSection=section;
+    const isHome=section==='home';
+
+    appRoot.classList.toggle('section-home-active', isHome);
+
+    bottomNavButtons.forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.section===section);
+    });
+
+    Obje

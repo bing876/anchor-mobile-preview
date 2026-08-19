@@ -1,0 +1,76 @@
+{
+      const elapsed=Math.min(totalDuration,now-begun);
+
+      // Camera centering finishes first.
+      const centerT=Math.min(1,elapsed/centerDuration);
+      const centerEase=easeInOutCubic(centerT);
+
+      camX=lerp(fromX,toX,centerEase);
+      camY=lerp(fromY,toY,centerEase);
+
+      // Progress lasts 1.5s longer than the centering motion.
+      const progressT=Math.min(1,elapsed/totalDuration);
+      if(bar) bar.style.width=(progressT*100).toFixed(2)+'%';
+
+      render();
+
+      if(elapsed<totalDuration){
+        borderlessCenterRAF=requestAnimationFrame(tick);
+        return;
+      }
+
+      borderlessCenterRAF=0;
+      camX=toX;
+      camY=toY;
+
+      centeredCard=subject;
+      centerProgressCard=subject;
+
+      if(card){
+        card.classList.remove('center-progress-active');
+        card.classList.add('center-progress-ready');
+      }
+      if(bar) bar.style.width='100%';
+
+      render();
+
+      // Full progress = automatic entry.
+      // Use a direct timed handoff so no pointer/RAF state can swallow the transition.
+      setTimeout(()=>{
+        if(
+          mode==='borderless' &&
+          !detailOpen &&
+          centeredCard===subject
+        ){
+          openMinimalDetail(subject);
+        }
+      },80);
+    }
+
+    borderlessCenterRAF=requestAnimationFrame(tick);
+  }
+
+  function openMinimalDetail(index){
+    if(detailOpen) return;
+
+    cancelBorderlessCenter(false);
+
+    detailOpen=true;
+    detailMedia.src='';
+
+    document.body.classList.add('detail-mode');
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.style.display='block';
+    detailView.classList.add('open');
+    detailView.setAttribute('aria-hidden','false');
+    appRoot.classList.add('detail-open');
+  }
+
+  function finishCloseDetail(){
+    detailOpen=false;
+    detailSwipeActive=false;
+    detailPointer=null;
+
+    detailView.classList.remove('open');
+    detailView.setA

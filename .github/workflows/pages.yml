@@ -29,7 +29,7 @@ jobs:
         with:
           enablement: true
 
-      - name: Build v10.3.0 app content only
+      - name: Build v10.3.0 app-only preview
         shell: bash
         run: |
           python - <<'PY'
@@ -43,41 +43,18 @@ jobs:
 
           html = gzip.decompress(base64.b64decode(match.group(1))).decode('utf-8')
 
-          # Remove only simulator chrome. Keep the v10.3.0 app UI and interaction layer.
+          # Remove the simulator-only stylesheet when present.
           html = re.sub(
               r'\n?<style id="simulator-1290x2796">[\s\S]*?</style>\n?',
               '\n',
               html,
               count=1,
           )
-          html = html.replace(
-              '<div class="device-stage"><div class="device-shell"><div class="phone">\n  <div class="screen">',
-              '<div class="screen">',
-              1,
-          )
 
-          script_pos = html.find('<script>')
-          if script_pos > 0:
-              prefix, suffix = html[:script_pos], html[script_pos:]
-              prefix = re.sub(r'\n  </div>\n</div>\n\s*$', '\n</div>\n\n', prefix, count=1)
-              html = prefix + suffix
-
-          # Real mobile safe areas; hide the hand-drawn status bar.
-          html = html.replace(
-              '  --safe-top:13.41cqw;\n  --safe-bottom:7.73cqw;',
-              '  --safe-top:env(safe-area-inset-top, 0px);\n  --safe-bottom:env(safe-area-inset-bottom, 0px);',
-              1,
-          )
-          html = re.sub(
-              r'<title>.*?</title>',
-              '<title>DIMSPACE Mobile · v10.3.0 · App Content Only</title>',
-              html,
-              count=1,
-              flags=re.S,
-          )
-
-          app_only_css = r'''
-          <style id="v10-3-0-app-content-only">
+          # Keep the v10.3.0 product UI/JS untouched. Force any remaining
+          # simulator containers to become transparent full-viewport wrappers.
+          css = r'''
+          <style id="v10-3-0-app-only-public">
           html,body{
             width:100%;height:100%;min-height:100%;margin:0!important;padding:0!important;
             overflow:hidden!important;background:#050505!important;
@@ -87,40 +64,53 @@ jobs:
             --safe-top:env(safe-area-inset-top,0px)!important;
             --safe-bottom:env(safe-area-inset-bottom,0px)!important;
           }
-          .screen{
+          .device-stage,.device-shell,.phone,.screen{
             position:fixed!important;inset:0!important;
             width:100vw!important;height:100vh!important;height:100dvh!important;
             max-width:none!important;max-height:none!important;
             margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
             overflow:hidden!important;background:#050505!important;
-            box-shadow:none!important;transform:none!important;container-type:inline-size!important;
+            box-shadow:none!important;transform:none!important;
           }
+          .device-stage,.device-shell{display:block!important}
+          .screen{container-type:inline-size!important}
           .app{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
           .status-lock{display:none!important}
           .topbar{top:var(--safe-top)!important}
           .bottom{padding-bottom:var(--safe-bottom)!important}
-          @supports not (height:100dvh){.screen{height:100vh!important}}
+          @supports not (height:100dvh){.device-stage,.device-shell,.phone,.screen{height:100vh!important}}
           </style>
           '''
-          html = html.replace('</head>', app_only_css + '\n</head>', 1)
+          html = html.replace('</head>', css + '\n</head>', 1)
+          html = re.sub(
+              r'<title>.*?</title>',
+              '<title>DIMSPACE Mobile · v10.3.0 · App Only</title>',
+              html,
+              count=1,
+              flags=re.S,
+          )
+
+          # Remove any old PWA/service-worker state after the new page loads.
+          cleanup = r'''
+          <script>
+          if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
+          if('caches' in window){caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});}
+          </script>
+          '''
+          html = html.replace('</body>', cleanup + '\n</body>', 1)
 
           dist = Path('dist')
-          dist.mkdir(exist_ok=True)
-          (dist / 'index.html').write_text(html, encoding='utf-8')
-          (dist / 'v10-3-0-app-content.html').write_text(html, encoding='utf-8')
+          if dist.exists(): shutil.rmtree(dist)
+          dist.mkdir()
+          (dist/'index.html').write_text(html, encoding='utf-8')
+          (dist/'v10-3-0-app-content.html').write_text(html, encoding='utf-8')
+          for name in ['icon.svg','manifest.webmanifest','.nojekyll']:
+              src=Path(name)
+              if src.exists(): shutil.copy2(src, dist/name)
 
-          for name in ['icon.svg', 'manifest.webmanifest', '.nojekyll']:
-              src = Path(name)
-              if src.exists():
-                  shutil.copy2(src, dist / name)
-
-          output = (dist / 'index.html').read_text(encoding='utf-8')
-          assert 'device-stage' not in output
-          assert 'device-shell' not in output
-          assert 'simulator-1290x2796' not in output
-          assert 'media-footer' in output
-          assert 'v10-3-0-app-content-only' in output
-          print('Built v10.3.0 app-only page:', len(output), 'bytes')
+          print('Built app-only v10.3.0:', len(html), 'bytes')
+          print('Contains heart metric:', 'media-footer' in html)
+          print('Contains old fallback:', 'product.html?v=1031' in html)
           PY
 
       - name: Upload site

@@ -1,0 +1,1287 @@
+parent;
+}
+.detail-back svg{
+  width:23px;
+  height:23px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.05;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* When internal page is open, literally everything else disappears. */
+body.detail-mode .status-lock,
+body.detail-mode .top-eat-shadow,
+body.detail-mode .topbar,
+body.detail-mode .bottom{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body.detail-mode .surface{
+  pointer-events:none !important;
+}
+</style>
+
+
+<style id="v7-11-entry-rules">
+/* Progress is a dwell-only affordance for borderless mode. */
+.surface.two .center-progress,
+.surface.two .card.center-progress-active .center-progress,
+.surface.two .card.center-progress-ready .center-progress{
+  display:none !important;
+  opacity:0 !important;
+}
+</style>
+
+
+<style id="v7-15-pages">
+.section-view{
+  position:absolute;
+  inset:0;
+  z-index:15;
+  display:none;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:
+    calc(var(--safe-top) + var(--nav-h) + 3.4cqw)
+    4.2cqw
+    calc(var(--bottom-core) + var(--safe-bottom) + 5.2cqw);
+  background:linear-gradient(180deg,#070708 0%,#040405 100%);
+}
+.section-view.active{display:block}
+.section-view::-webkit-scrollbar{display:none}
+.section-shell{display:flex;flex-direction:column;gap:3.2cqw;min-height:100%}
+.section-title{
+  color:#fff;
+  font-size:6.2cqw;
+  line-height:1.02;
+  font-weight:700;
+  letter-spacing:-.03em;
+}
+.section-sub{
+  margin-top:1.3cqw;
+  color:rgba(255,255,255,.58);
+  font-size:3.45cqw;
+  line-height:1.42;
+  max-width:76%;
+}
+.section-card{
+  border-radius:4.2cqw;
+  padding:4.2cqw;
+  background:rgba(255,255,255,.045);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.section-card h3{
+  margin:0 0 1.4cqw;
+  color:#fff;
+  font-size:4.2cqw;
+  line-height:1.12;
+  font-weight:650;
+}
+.section-card p{
+  margin:0;
+  color:rgba(255,255,255,.66);
+  font-size:3.45cqw;
+  line-height:1.42;
+}
+.section-row{display:grid;grid-template-columns:1fr 1fr;gap:2.8cqw}
+.mini-item{
+  min-height:24cqw;
+  border-radius:3.6cqw;
+  padding:3.6cqw;
+  background:rgba(255,255,255,.035);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.mini-item .k{font-size:3cqw;color:rgba(255,255,255,.48)}
+.mini-item .v{font-size:4.05cqw;color:#fff;font-weight:620;line-height:1.14}
+
+.app.section-home-active .surface,
+.app.section-home-active .top-eat-shadow{display:block}
+.app:not(.section-home-active) .surface,
+.app:not(.section-home-active) .top-eat-shadow{display:none !important}
+.app:not(.section-home-active) .tabs{opacity:.32;pointer-events:none}
+
+.bottom .nav,.bottom .center{
+  transition:transform .18s ease,color .18s ease,opacity .18s ease;
+}
+.bottom .nav:active,.bottom .center:active{transform:scale(.965)}
+</style>
+
+
+<style id="bottom-nav-image-style-v7-20">
+/* Bottom nav redesign v4 — corrected TikTok-like proportions. */
+.app{
+  /* Content row only. Safe Area is added separately below. */
+  --bottom-core:clamp(50px,13.4cqw,54px);
+  --bottom-bg-extra:0px;
+}
+
+.bottom{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+
+  height:calc(var(--bottom-core) + var(--safe-bottom));
+  padding:0 0 var(--safe-bottom);
+
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  align-items:start;
+
+  background:linear-gradient(
+    180deg,
+    rgba(8,8,9,.90) 0%,
+    rgba(7,7,8,.97) 100%
+  );
+
+  backdrop-filter:blur(18px) saturate(1.02);
+  -webkit-backdrop-filter:blur(18px) saturate(1.02);
+
+  border-top:0;
+  box-shadow:none;
+  z-index:30;
+}
+
+.bottom button{
+  appearance:none;
+  border:0;
+  background:transparent;
+
+  margin:0;
+  padding:0;
+
+  min-width:0;
+  width:100%;
+  height:var(--bottom-core);
+
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+
+  color:rgba(255,255,255,.48);
+
+  -webkit-tap-highlight-color:transparent;
+
+  transition:none !important;
+}
+
+/* No press animation / opacity / scale. */
+.bottom button:hover,
+.bottom button:active,
+.bottom button:focus,
+.bottom button:focus-visible{
+  transform:none !important;
+  opacity:1 !important;
+  background:transparent !important;
+  outline:none !important;
+}
+
+.bottom .nav{
+  position:relative;
+
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+
+  padding-top:12px;
+  gap:3px;
+}
+
+.bottom .nav-icon{
+  width:24px;
+  height:24px;
+
+  display:grid;
+  place-items:center;
+
+  flex:0 0 24px;
+}
+
+.bottom .nav-icon svg{
+  width:24px;
+  height:24px;
+
+  display:block;
+  overflow:visible;
+
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.bottom .nav-icon .fill-active{
+  fill:currentColor;
+  stroke:none;
+}
+
+.bottom .nav-label{
+  display:block;
+
+  margin:0;
+
+  color:currentColor;
+
+  font-family:var(--font);
+  font-size:11px;
+  font-weight:590;
+  line-height:1;
+
+  letter-spacing:-.01em;
+  white-space:nowrap;
+}
+
+.bottom .nav.active{
+  color:#fff;
+}
+
+.bottom .home-indicator-dot{
+  display:none !important;
+}
+
+/* =====================================================================
+   FROZEN CENTER +
+   Vertical reference is NOT the full bottom bar.
+   Reference band = nav icon top (12px) -> label bottom (50px) = 38px.
+   The + is centered inside exactly that 38px content band.
+   ===================================================================== */
+.bottom .center{
+  width:100%;
+  height:38px;
+
+  margin-top:12px;
+  padding:0;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:#fff;
+
+  transform:none !important;
+  transition:none !important;
+}
+
+.bottom .center:hover,
+.bottom .center:active,
+.bottom .center:focus,
+.bottom .center:focus-visible{
+  transform:none !important;
+  opacity:1 !important;
+  background:transparent !important;
+  outline:none !important;
+}
+
+.bottom .center svg{
+  width:33px;
+  height:auto;
+
+  display:block;
+  flex:none;
+
+  transform:none !important;
+}
+</style>
+
+
+<!-- ==================================================================
+     DIMSPACE MOBILE · BOTTOM NAV FROZEN BASELINE
+     LOCKED AFTER THIS VERSION:
+     - bottom background / height / safe-area
+     - four nav icons
+     - nav labels / typography / spacing
+     - five-column horizontal geometry
+     - center + size and content-band alignment
+     Future UI edits must not modify this module unless the user explicitly
+     unlocks the bottom navigation.
+     ================================================================== -->
+
+
+<!--
+DIMSPACE MOBILE MODULE FREEZE
+[CORE] content surface
+[TOP] top navigation
+[CARD_META] star/type overlays
+[BOTTOM_NAV] FROZEN after this version
+[SIMULATOR] preview-only shell, isolated from product UI
+-->
+
+
+<style id="dimspace-single-file-preview-fix">
+/* ================================================================
+   PREVIEW SHELL ONLY
+   76.7mm × 159.9mm aspect ratio.
+   This shell is isolated from product UI.
+   ================================================================ */
+html,body{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  background:#070708 !important;
+}
+body{
+  display:grid !important;
+  place-items:center !important;
+  padding:14px !important;
+}
+
+.device-stage{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+}
+
+.device-shell{
+  position:relative !important;
+  width:min(
+    calc(100vw - 28px),
+    calc((100vh - 28px) * 76.7 / 159.9),
+    430px
+  ) !important;
+  height:auto !important;
+  aspect-ratio:76.7 / 159.9 !important;
+
+  padding:12px !important;
+  overflow:hidden !important;
+
+  border-radius:50px !important;
+  background:#121216 !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.035),
+    0 28px 80px rgba(0,0,0,.54) !important;
+}
+
+.device-shell > .phone{
+  position:absolute !important;
+  inset:12px !important;
+  width:auto !important;
+  height:auto !important;
+
+  border-radius:40px !important;
+  overflow:hidden !important;
+
+  background:#050505 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.035) !important;
+}
+
+.device-shell .screen{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+
+  border-radius:40px !important;
+  overflow:hidden !important;
+}
+
+/* ================================================================
+   BOTTOM NAV · FROZEN
+   Only these values define the bottom navigation geometry.
+   ================================================================ */
+.bottom{
+  --frozen-nav-content-h:42px;
+
+  height:calc(54px + var(--safe-bottom)) !important;
+  padding:6px 0 var(--safe-bottom) !important;
+
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  align-items:start !important;
+
+  background:linear-gradient(
+    180deg,
+    rgba(8,8,9,.90) 0%,
+    rgba(7,7,8,.97) 100%
+  ) !important;
+
+  border-top:0 !important;
+  box-shadow:none !important;
+}
+
+.bottom .nav{
+  width:100% !important;
+  height:var(--frozen-nav-content-h) !important;
+
+  padding:0 !important;
+  margin:0 !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+
+  color:rgba(255,255,255,.48) !important;
+
+  transform:none !important;
+  transition:none !important;
+}
+
+.bottom .nav.active{
+  color:#fff !important;
+}
+
+.bottom .nav .nav-icon{
+  width:24px !important;
+  height:24px !important;
+  flex:0 0 24px !important;
+  margin:0 !important;
+}
+
+.bottom .nav .nav-icon svg{
+  width:24px !important;
+  height:24px !important;
+  display:block !important;
+}
+
+.bottom .nav .nav-label{
+  margin-top:3px !important;
+
+  font-family:var(--font) !important;
+  font-size:11px !important;
+  font-weight:590 !important;
+  line-height:11px !important;
+
+  white-space:nowrap !important;
+}
+
+/* Current DOM also supports legacy span labels. */
+.bottom .nav > span:not(.nav-icon):not(.home-indicator-dot){
+  margin-top:3px !important;
+
+  font-family:var(--font) !important;
+  font-size:11px !important;
+  font-weight:590 !important;
+  line-height:11px !important;
+
+  white-space:nowrap !important;
+}
+
+/* Center + uses the SAME 42px content band as icon-top → label-bottom. */
+.bottom .center{
+  width:100% !important;
+  height:var(--frozen-nav-content-h) !important;
+
+  margin:0 !important;
+  padding:0 !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  color:#fff !important;
+
+  transform:none !important;
+  transition:none !important;
+}
+
+.bottom .center svg{
+  width:40px !important;
+  height:auto !important;
+
+  display:block !important;
+  flex:none !important;
+
+  transform:none !important;
+}
+
+/* No press / scale / opacity feedback on any bottom nav control. */
+.bottom button:hover,
+.bottom button:active,
+.bottom button:focus,
+.bottom button:focus-visible{
+  transform:none !important;
+  opacity:1 !important;
+  background:transparent !important;
+  outline:none !important;
+  box-shadow:none !important;
+}
+
+/* Engineering freeze marker:
+   Future edits should not modify .bottom or its children unless explicitly unlocked. */
+</style>
+
+
+<style id="dimspace-frozen-simulator-v1">
+/* =====================================================================
+   DIMSPACE PREVIEW SIMULATOR · FROZEN
+   Physical proportion reference: 76.7mm × 159.9mm
+   This block is PREVIEW-ONLY and must never be shipped as product UI.
+   ===================================================================== */
+:root{
+  --sim-physical-w:76.7;
+  --sim-physical-h:159.9;
+
+  --sim-w:min(
+    calc(100vw - 28px),
+    calc((100vh - 28px) * 76.7 / 159.9),
+    430px
+  );
+  --sim-h:calc(var(--sim-w) * 159.9 / 76.7);
+
+  --sim-shell-pad:12px;
+  --sim-shell-radius:50px;
+  --sim-screen-radius:39px;
+
+  /* frozen system region inside the product screen */
+  --sim-status-h:54px;
+  --sim-dynamic-w:118px;
+  --sim-dynamic-h:32px;
+  --sim-dynamic-top:10px;
+  --sim-status-side:15px;
+}
+
+html,body{
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  background:#080809 !important;
+}
+
+body{
+  display:grid !important;
+  place-items:center !important;
+  padding:14px !important;
+}
+
+/* immutable device boundary */
+.device-stage{
+  width:100% !important;
+  height:100% !important;
+  display:grid !important;
+  place-items:center !important;
+  overflow:hidden !important;
+}
+
+.device-shell{
+  position:relative !important;
+
+  width:var(--sim-w) !important;
+  height:var(--sim-h) !important;
+  aspect-ratio:76.7 / 159.9 !important;
+
+  padding:var(--sim-shell-pad) !important;
+  margin:0 !important;
+
+  border-radius:var(--sim-shell-radius) !important;
+  overflow:hidden !important;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)),
+    #111114 !important;
+
+  border:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.028),
+    0 28px 84px rgba(0,0,0,.55) !important;
+
+  contain:layout paint !important;
+}
+
+/* product viewport boundary */
+.device-shell > .phone{
+  position:absolute !important;
+  inset:var(--sim-shell-pad) !important;
+
+  width:auto !important;
+  height:auto !important;
+  max-width:none !important;
+  max-height:none !important;
+
+  border-radius:var(--sim-screen-radius) !important;
+  overflow:hidden !important;
+
+  background:#050505 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.035) !important;
+
+  transform:none !important;
+}
+
+.device-shell .screen{
+  position:absolute !important;
+  inset:0 !important;
+
+  width:100% !important;
+  height:100% !important;
+
+  border-radius:var(--sim-screen-radius) !important;
+  overflow:hidden !important;
+
+  container-type:inline-size !important;
+  background:#050505 !important;
+}
+
+/* hard rule: all product content must stay inside the screen */
+.device-shell .screen,
+.device-shell .app,
+.device-shell .surface,
+.device-shell .section-view,
+.device-shell .detail-view{
+  max-width:100% !important;
+  max-height:100% !important;
+}
+
+/* =====================================================================
+   FROZEN SYSTEM UI · preview only
+   ===================================================================== */
+.sim-system-ui{
+  position:absolute;
+  inset:0 0 auto 0;
+  height:var(--sim-status-h);
+  z-index:2147483647;
+  pointer-events:none;
+  color:#fff;
+}
+
+.sim-dynamic-island{
+  position:absolute;
+  top:var(--sim-dynamic-top);
+  left:50%;
+  width:var(--sim-dynamic-w);
+  height:var(--sim-dynamic-h);
+  transform:translateX(-50%);
+  border-radius:999px;
+  background:#030304;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.sim-status-time{
+  position:absolute;
+  left:var(--sim-status-side);
+  top:15px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;
+  font-size:14px;
+  line-height:1;
+  font-weight:700;
+  letter-spacing:-.02em;
+}
+
+.sim-status-right{
+  position:absolute;
+  right:var(--sim-status-side);
+  top:13px;
+  height:20px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.sim-signal{
+  display:flex;
+  gap:2px;
+  align-items:flex-end;
+  height:12px;
+}
+.sim-signal i{
+  display:block;
+  width:2.4px;
+  border-radius:99px;
+  background:#fff;
+}
+.sim-signal i:nth-child(1){height:4px;opacity:.55}
+.sim-signal i:nth-child(2){height:6px;opacity:.68}
+.sim-signal i:nth-child(3){height:8px;opacity:.84}
+.sim-signal i:nth-child(4){height:10px}
+
+.sim-wifi{
+  width:16px;
+  height:12px;
+  display:block;
+}
+
+.sim-battery{
+  min-width:27px;
+  height:16px;
+  padding:0 5px;
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:#101012;
+  font-size:11px;
+  line-height:1;
+  font-weight:800;
+}
+
+/* hide old hand-drawn status layer in preview;
+   frozen simulator system UI above replaces it */
+.device-shell .status-lock{
+  display:none !important;
+}
+
+/* product starts below frozen system area */
+.device-shell .topbar{
+  top:var(--sim-status-h) !important;
+}
+
+/* keep product UI inside screen, never under physical shell */
+.device-shell .app{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  overflow:hidden !important;
+  border-radius:inherit !important;
+}
+
+/* freeze preview simulator boundaries against later CSS */
+body[data-simulator-frozen="true"] .device-shell{
+  isolation:isolate !important;
+}
+</style>
+
+
+<!--
+======================================================================
+DIMSPACE MOBILE ARCHITECTURE LOCK
+
+PREVIEW LAYER (NEVER SHIP TO PHONE)
+- .device-stage
+- .device-shell
+- .phone
+- .sim-system-ui
+- .sim-dynamic-island
+- simulator dimensions / borders / radius
+
+PRODUCT UI LAYER (SHIP TO PHONE)
+- .screen > .app
+- content surface
+- top navigation
+- card metadata
+- frozen bottom navigation
+- section/detail views
+
+RULE:
+Future product edits may only target the PRODUCT UI LAYER.
+Simulator boundaries and system UI are frozen unless explicitly unlocked.
+======================================================================
+-->
+
+
+<style id="dimspace-simulator-boundary-bottom-fix-v2">
+/* =====================================================================
+   SIMULATOR BOUNDARY FIX · FROZEN
+   Only fixes:
+   1) physical phone frame visibility
+   2) screen-to-frame inset
+   3) bottom nav fills the product screen to the bottom edge
+   ===================================================================== */
+
+:root{
+  --sim-shell-pad:7px !important;
+  --sim-shell-radius:52px !important;
+  --sim-screen-radius:45px !important;
+
+  --sim-status-h:54px !important;
+  --sim-safe-bottom:18px !important;
+}
+
+/* Physical frame: clearly visible, but thin. */
+.device-shell{
+  padding:var(--sim-shell-pad) !important;
+  border-radius:var(--sim-shell-radius) !important;
+
+  background:
+    linear-gradient(145deg,
+      rgba(255,255,255,.16) 0%,
+      rgba(255,255,255,.055) 16%,
+      rgba(30,31,35,.98) 42%,
+      rgba(12,13,16,.99) 78%,
+      rgba(255,255,255,.055) 100%
+    ) !important;
+
+  border:1px solid rgba(255,255,255,.18) !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.70),
+    inset 0 0 0 2px rgba(255,255,255,.025),
+    0 28px 84px rgba(0,0,0,.56) !important;
+
+  overflow:hidden !important;
+}
+
+/* Visible immutable rim. */
+.device-shell::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2147483645;
+  border-radius:inherit;
+  pointer-events:none;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.16),
+    inset 0 0 0 3px rgba(0,0,0,.30);
+}
+
+/* Screen now sits much closer to the physical frame. */
+.device-shell > .phone{
+  inset:var(--sim-shell-pad) !important;
+
+  border-radius:var(--sim-screen-radius) !important;
+  border:1px solid rgba(0,0,0,.90) !important;
+
+  background:#050505 !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.025),
+    0 0 0 1px rgba(255,255,255,.025) !important;
+}
+
+.device-shell .screen{
+  inset:0 !important;
+  border-radius:calc(var(--sim-screen-radius) - 1px) !important;
+  background:#050505 !important;
+}
+
+/* Product safe areas inside the fixed simulator. */
+.device-shell .app{
+  --safe-top:var(--sim-status-h) !important;
+  --safe-bottom:var(--sim-safe-bottom) !important;
+
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+
+  overflow:hidden !important;
+  border-radius:inherit !important;
+  background:#050505 !important;
+}
+
+/* Bottom nav fills the product viewport completely to the screen edge. */
+.device-shell .bottom{
+  left:-1px !important;
+  right:-1px !important;
+  bottom:-1px !important;
+
+  width:auto !important;
+  height:calc(54px + var(--sim-safe-bottom) + 1px) !important;
+
+  padding:
+    6px
+    1px
+    calc(var(--sim-safe-bottom) + 1px)
+    1px !important;
+
+  margin:0 !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8,8,9,.92) 0%,
+      rgba(6,6,7,.985) 52%,
+      #050506 100%
+    ) !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+
+  overflow:hidden !important;
+}
+
+/* Keep the frozen nav content band exactly where it is. */
+.device-shell .bottom .nav,
+.device-shell .bottom .center{
+  height:42px !important;
+}
+
+/* Prevent any product UI from visually crossing the fixed phone screen. */
+.device-shell .screen > *,
+.device-shell .app,
+.device-shell .surface,
+.device-shell .section-view,
+.device-shell .detail-view{
+  max-width:100% !important;
+  max-height:100% !important;
+}
+
+/* The simulator system layer remains above the product UI. */
+.device-shell .sim-system-ui{
+  border-radius:calc(var(--sim-screen-radius) - 1px)
+                calc(var(--sim-screen-radius) - 1px)
+                0 0 !important;
+  overflow:hidden !important;
+}
+</style>
+
+
+<style id="dimspace-fill-fix-v3">
+:root{
+  --sim-shell-pad: 6px;
+  --sim-status-h: 52px;
+  --sim-topnav-h: 62px;
+  --sim-header-overlay: 114px;
+  --sim-bottom-nav-h: 86px;
+}
+
+/* tighter phone fit so the screen visually fills the shell better */
+.device-shell{
+  padding: var(--sim-shell-pad) !important;
+  border-radius: 52px !important;
+  overflow: hidden !important;
+}
+.device-shell > .phone{
+  border-radius: 45px !important;
+  overflow: hidden !important;
+  background:#050607 !important;
+}
+.device-shell .app{
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  overflow:hidden !important;
+  background:#050607 !important;
+}
+
+/* home feed should run all the way behind the top area */
+.device-shell .scene-home{
+  overflow:hidden !important;
+}
+.device-shell .feed-grid{
+  top:0 !important;
+  bottom:0 !important;
+  background:#050607 !important;
+  overflow:hidden !important;
+}
+.device-shell .viewport{
+  inset:0 !important;
+  overflow:hidden !important;
+}
+
+/* bottom nav must visually fill to the bottom edge of the screen */
+.device-shell .bottom-nav{
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  width:100% !important;
+  height:86px !important;
+  padding:7px 12px calc(7px + env(safe-area-inset-bottom,0px)) !important;
+  background:linear-gradient(180deg, rgba(10,10,12,.92), rgba(5,5,7,.985)) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  overflow:hidden !important;
+}
+
+/* prevent any visible seam between content and shell */
+.device-shell .screen,
+.device-shell .phone,
+.device-shell .app,
+.device-shell .scene-home,
+.device-shell .feed-grid{
+  background-color:#050607 !important;
+}
+</style>
+
+
+<style id="dimspace-v3-rollback-minimal-boundary-fix">
+/* =====================================================================
+   v3 ROLLBACK · MINIMAL BOUNDARY FIX
+   Only fixes:
+   - visible neutral simulator rim
+   - thinner frame/screen gap
+   - bottom background overscan to the real screen edge
+   Product UI geometry remains v3.
+   ===================================================================== */
+
+:root{
+  --sim-shell-pad:5px !important;
+}
+
+/* Keep the simulator visible but neutral; no copper/brown edge. */
+.device-shell{
+  padding:var(--sim-shell-pad) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.13) 0%,
+      rgba(63,65,70,.11) 18%,
+      rgba(26,27,31,.99) 43%,
+      rgba(12,13,16,.99) 79%,
+      rgba(255,255,255,.055) 100%
+    ) !important;
+
+  border:1px solid rgba(255,255,255,.16) !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.72),
+    inset 0 0 0 2px rgba(255,255,255,.022),
+    0 28px 82px rgba(0,0,0,.54) !important;
+}
+
+/* Screen remains exactly the v3 product viewport, just closer to the frame. */
+.device-shell > .phone{
+  inset:var(--sim-shell-pad) !important;
+  background:#050506 !important;
+}
+
+.device-shell .screen,
+.device-shell .app{
+  background:#050506 !important;
+}
+
+/* Bottom nav: keep all icon/text/+ geometry frozen.
+   Only overscan the BACKGROUND 2px to guarantee no seam at the rounded edge. */
+.device-shell .bottom{
+  left:-1px !important;
+  right:-1px !important;
+  bottom:-2px !important;
+
+  width:auto !important;
+  height:calc(54px + var(--sim-safe-bottom) + 2px) !important;
+
+  padding:
+    6px
+    1px
+    calc(var(--sim-safe-bottom) + 2px)
+    1px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8,8,9,.92) 0%,
+      rgba(6,6,7,.985) 54%,
+      #050506 100%
+    ) !important;
+
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+/* Explicitly preserve the already-confirmed bottom-nav content band. */
+.device-shell .bottom .nav,
+.device-shell .bottom .center{
+  height:42px !important;
+}
+
+/* No bottom control press animation. */
+.device-shell .bottom button:hover,
+.device-shell .bottom button:active,
+.device-shell .bottom button:focus,
+.device-shell .bottom button:focus-visible{
+  transform:none !important;
+  opacity:1 !important;
+  background:transparent !important;
+  outline:none !important;
+  box-shadow:none !important;
+}
+</style>
+
+
+<!--
+DIMSPACE MOBILE · v3.1 ROLLBACK REPAIR
+BASE: v3_TOP_BOTTOM_FILL_FIXED
+
+FROZEN:
+- simulator physical ratio
+- system status / dynamic island positions
+- bottom nav background geometry
+- bottom nav icons / labels / center +
+- two-column / borderless interactions
+
+FIXED ONLY:
+- two-column top camera limit: -28 -> 0
+- initial camY: -26 -> 0
+- simulator rim color/thickness
+- bottom background 2px overscan
+-->
+
+
+<!--
+DIMSPACE MOBILE · SAFE ROLLBACK BASELINE
+
+SOURCE:
+v3.1 ROLLBACK REPAIR
+
+STRICTLY FROZEN:
+- bottom navigation background
+- four navigation icons
+- labels and spacing
+- center plus
+- bottom navigation interactions
+
+Future edits must not target the frozen bottom navigation unless explicitly unlocked.
+-->
+
+
+<style id="dimspace-frame-only-safe-fix">
+/* Physical simulator frame only. Product bottom navigation is untouched. */
+
+.device-shell{
+  border:1px solid rgba(255,255,255,.17) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.14) 0%,
+      rgba(77,79,84,.09) 18%,
+      rgba(24,25,29,.99) 46%,
+      rgba(11,12,15,.99) 82%,
+      rgba(255,255,255,.045) 100%
+    ) !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.74),
+    inset 0 0 0 2px rgba(255,255,255,.018),
+    0 28px 82px rgba(0,0,0,.54) !important;
+}
+
+.device-shell::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2147483646;
+  border-radius:inherit;
+  pointer-events:none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.12),
+    inset 0 0 0 3px rgba(0,0,0,.24);
+}
+
+.device-shell > .phone{
+  background:#050506 !important;
+}
+
+.device-shell .screen{
+  background:#050506 !important;
+  overflow:hidden !important;
+}
+</style>
+
+
+<style id="dimspace-two-column-star-clear">
+/* SECOND COLUMN ONLY: temporarily clear upper-left star metadata. */
+.surface.two .star-meta{
+  display:none !important;
+}
+</style>
+
+
+<!--
+DIMSPACE MOBILE · TWO-COLUMN INTERACTION v3.2
+
+CHANGED:
+- second-column star metadata hidden
+- vertical two-column gestures lock horizontal position
+- horizontal/free drag keeps borderless direct-follow behavior
+- recovery target is selected only AFTER inertia ends
+- recovery uses nearest complete two-column page from final position
+- wheel/trackpad vertical scrolling follows the same horizontal lock
+
+NOT CHANGED:
+- frozen bottom navigation
+- simulator frame
+- top navigation
+- borderless centering behavior
+- detail entry / return behavior
+-->
+
+
+<style id="dimspace-star-clear-all-feed-modes">
+.surface.two .star-meta,
+.surface.borderless .star-meta{
+  display:none !important;
+}
+</style>
+
+<link rel="icon" type="image/svg+xml" href="./anchor-logo.svg" />
+</head>
+<body data-simulator-frozen="true">
+<div class="device-stage"><div class="device-shell"><div class="phone">
+  <div class="screen">
+
+    <!-- PREVIEW-ONLY · FROZEN SYSTEM UI -->
+    <div class="sim-system-ui" aria-hidden="true">
+      <div class="sim-status-time">12:18</div>
+      <div class="sim-dynamic-island"></div>
+      <div class="sim-status-right">
+        <div class="sim-signal"><i></i><i></i><i></i><i></i></div>
+        <svg class="sim-wifi" viewBox="0 0 17 13" fill="none">
+          <path d="M1.5 4.9C5.92 1.1 11.08 1.1 15.5 4.9" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4.25 7.65C6.86 5.35 10.14 5.35 12.75 7.65" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7.15 10.45C8 9.78 9 9.78 9.85 10.45" stroke="white" stroke-width="2.1" stroke-linecap="round"/>
+        </svg>
+        <div class="sim-battery">84</div>
+      </div>
+    </div>
+
+    <section class="app">
+      <main class="surface two" id="surface">
+        <div class="world" id="world"></div>
+        <div class="ambient-light" aria-hidden="true"></div>
+        <div class="edge-dark" aria-hidden="true"></div>
+      </main>
+
+      <section class="section-view" id="dailyView" data-section="daily" aria-hidden="true">
+        <div class="section-shell">
+          <div>
+            <div class="section-title">日常</div>
+            <div class="section-sub">更安静、更有人感的关系流。这里后续单独设计朋友、关注与生活记录。</div>
+          </div>
+          <div class="section-card">
+            <h3>关系与生活</h3>
+            <p>先保留可点击跳转状态。下一步我们再单独设计：朋友动态、关注的人、自己的分享，以及让 Assistant 更懂你的生活。</p>
+          </div>
+          <div class="section-row">
+            <div class="mini-item"><div class="k">下一步</div><div class="v">关系流结构</div></div>
+            <div class="mini-item"><div class="k">状态</div><div class="v">已可点击</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-view" id="messageView" data-section="messages" aria-hidden="true">
+        <div class="section-shell">
+          <div>
+            <div class="section-title">消息</div>
+            <div class="section-sub">这里后续承接人与项目、助理与结果，不再只是传统联系人列表。</div>
+          </div>
+          <div class="section-card">
+            <h3>结果优先</h3>
+            <p>手机端核心是：看结果、做决定、继续沟通。下一步我们再拆消息列表、项目入口和执行结果页。</p>
+          </div>
+          <div class="section-row">
+            <div class="mini-item"><div class="k">下一步</div><div class="v">消息列表</div></div>
+            <div class="mini-item"><div class="k">状态</div><div class="v">已可点击</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-view" id="mineView" data-section="mine" aria-hidden="true">
+        <div class="section-shell">
+          <div>
+            <div class="section-title">我的</div>
+            <div class="section-sub">未来这里会成为你的数字资产世界：项目、作品、文件、Skill、应用、权益与数据。</div>
+          </div>
+          <div class="section-card">
+            <h3>资产世界</h3>
+            <p>当前先做可点击跳转。之后我们会一个一个设计：项目、作品、文件、应用、AI 和身份。</p>
+          </div>
+          <div class="section-row">
+            <div class="mini-item"><div class="k">下一步</div><div class="v">资产首页</div></div>
+            <div class="mini-item"><div class="k">状态</div><div class="v">已可点击</div></div>
+          </div>
+        </div>
+      </section>
+
+
+      <div class="detail-view" id="detailView" aria-hidden="true">
+        <img class="detail-media" id="detailMedia" alt="">
+        <button class="detail-back" id="detailBackBtn" type="button" aria-label="返回">
+          <svg viewBox="0 0 24 24"><path d="M15.5 5.5 9 12l6.5 6.5"/></svg>
+        </button>
+   

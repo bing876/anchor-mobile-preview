@@ -1,0 +1,137 @@
+   type.className='type-badge';
+    type.innerHTML=typeIcon(el.dataset.type);
+
+    const save=document.createElement('div');
+    save.className='star-meta';
+    save.innerHTML=starMarkup(VIEW_LEVELS[index%VIEW_LEVELS.length]);
+
+    const progress=document.createElement('div');
+    progress.className='center-progress';
+    progress.innerHTML='<i></i>';
+
+    meta.append(type,save);
+    el.append(img,meta,progress);
+    world.appendChild(el);
+
+    // Card entry is handled by the surface-level tap detector below.
+    // This remains intentionally empty because pointer capture can retarget native clicks.
+
+    return el;
+  }
+
+  for(let i=0;i<CARD_COUNT;i++) cards.push(createCard(i));
+
+  /* =================================================================
+     02 · LAYOUT DEFINITIONS
+     ================================================================= */
+  function twoLayout(){
+    const w=surface.clientWidth;
+    const gap=1;
+    const cardW=(w-gap)/2;
+    const cardH=cardW*1.3333;
+    const rowsPerPage=12;
+    const perPage=rowsPerPage*2;
+    const positions=new Array(CARD_COUNT);
+
+    for(let i=0;i<CARD_COUNT;i++){
+      const page=Math.floor(i/perPage);
+      const local=i%perPage;
+      const col=local%2;
+      const row=Math.floor(local/2);
+
+      positions[i]={
+        x:page*w+col*(cardW+gap),
+        y:row*(cardH+gap)+(col===1?8:0),
+        w:cardW,
+        h:cardH
+      };
+    }
+    return positions;
+  }
+
+  function borderlessLayout(subject=borderlessSubject){
+    const w=surface.clientWidth;
+    const gap=1;
+
+    // Strictly from uploaded reference v45:
+    // mobile CARD_W = min(300, app width * .77)
+    // CARD_H = CARD_W * 1.3333
+    const cardW=Math.min(300,w*.77);
+    const cardH=cardW*1.3333;
+    const stepX=cardW+gap;
+    const stepY=cardH+gap;
+
+    const cols=9;
+    const centerCol=4;
+    const positions=new Array(CARD_COUNT);
+
+    // Subject sits at the local grid center. Earlier/later items extend
+    // above/below/left/right instead of "jumping to another page".
+    for(let i=0;i<CARD_COUNT;i++){
+      const q=(i-subject)+centerCol;
+      const col=((q%cols)+cols)%cols;
+      const row=Math.floor(q/cols);
+
+      positions[i]={
+        x:(col-centerCol)*stepX,
+        y:row*stepY,
+        w:cardW,
+        h:cardH
+      };
+    }
+    return positions;
+  }
+
+  function getLayout(currentMode){
+    return currentMode==='two' ? twoLayout() : borderlessLayout();
+  }
+
+  function lerp(a,b,t){return a+(b-a)*t}
+  function smooth(t){return t*t*(3-2*t)}
+
+  function blendedLayout(from,to,t){
+    const p=smooth(Math.max(0,Math.min(1,t)));
+    return from.map((a,i)=>{
+      const b=to[i];
+      return {
+        x:lerp(a.x,b.x,p),
+        y:lerp(a.y,b.y,p),
+        w:lerp(a.w,b.w,p),
+        h:lerp(a.h,b.h,p)
+      };
+    });
+  }
+
+  /* =================================================================
+     03 · RENDER
+     ================================================================= */
+  function render(){
+    world.style.transform=`translate3d(${-camX}px,${-camY}px,0)`;
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+
+    const borderlessAmount=pinch
+      ? (pinch.fromMode==='two' ? pinch.progress : 1-pinch.progress)
+      : (morphVisualAmount!==null ? morphVisualAmount : (mode==='borderless' ? 1 : 0));
+
+    if(ambientLight) ambientLight.style.opacity=borderlessAmount.toFixed(3);
+    if(edgeDark) edgeDark.style.opacity=borderlessAmount.toFixed(3);
+
+    cards.forEach((el,i)=>{
+      const p=layout[i];
+      if(!p)return;
+
+      el.style.width=p.w+'px';
+      el.style.height=p.h+'px';
+      el.style.transform=`translate3d(${p.x}px,${p.y}px,0)`;
+
+      const img=el.querySelector('img');
+      if(!img)return;
+
+      const cx=p.x+p.w/2-camX;
+      const cy=p.y+p.h/2-camY;
+
+      // v38 reference focus geometry and image treatment.
+      const nx=(cx-vw/2)/(vw*.50);
+      const ny=(c

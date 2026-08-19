@@ -1,0 +1,140 @@
+y-vh/2)/(vh*.46);
+      const dist=Math.min(1.35,Math.hypot(nx,ny));
+      const raw=Math.max(0,1-dist/1.02);
+      const focus=smooth(raw);
+
+      const targetBrightness=.42+focus*.74;
+      const targetSaturation=.62+focus*.38;
+      const targetContrast=.92+focus*.10;
+      const targetOpacity=.84+focus*.16;
+
+      const brightness=lerp(1,targetBrightness,borderlessAmount);
+      const saturation=lerp(1,targetSaturation,borderlessAmount);
+      const contrast=lerp(1,targetContrast,borderlessAmount);
+      const opacity=lerp(1,targetOpacity,borderlessAmount);
+
+      img.style.filter=
+        `brightness(${brightness.toFixed(3)}) `+
+        `saturate(${saturation.toFixed(3)}) `+
+        `contrast(${contrast.toFixed(3)})`;
+      img.style.opacity=opacity.toFixed(3);
+
+      const glow=.06*focus*borderlessAmount;
+      el.style.boxShadow =
+        `inset 0 0 0 1px rgba(255,255,255,${(.05+.01*borderlessAmount).toFixed(3)}), ` +
+        `0 1px 0 rgba(255,255,255,.02), ` +
+        `0 0 ${Math.round(18*focus*borderlessAmount)}px rgba(255,255,255,${glow.toFixed(3)})`;
+    });
+  }
+
+  function applyLayout(nextLayout,instant=false){
+    layout=nextLayout;
+    cards.forEach(el=>el.classList.toggle('instant',instant));
+    render();
+    requestAnimationFrame(()=>cards.forEach(el=>el.classList.remove('instant')));
+  }
+
+  function cameraBounds(){
+    if(mode==='two'){
+      const w=surface.clientWidth;
+      const cardH=((w-1)/2)*1.3333;
+      const maxY=12*(cardH+1)-surface.clientHeight+100;
+      const pages=Math.ceil(CARD_COUNT/24);
+
+      return {
+        minX:0,
+        maxX:Math.max(0,(pages-1)*w),
+        minY:0,
+        maxY:Math.max(0,maxY)
+      };
+    }
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+    const xs=layout.map(p=>p.x);
+    const ys=layout.map(p=>p.y);
+    const maxXs=layout.map(p=>p.x+p.w);
+    const maxYs=layout.map(p=>p.y+p.h);
+
+    return {
+      minX:Math.min(...xs)-vw*.58,
+      maxX:Math.max(...maxXs)-vw+vw*.58,
+      minY:Math.min(...ys)-vh*.46,
+      maxY:Math.max(...maxYs)-vh+vh*.46
+    };
+  }
+
+  function clampCamera(){
+    const b=cameraBounds();
+    camX=Math.max(b.minX,Math.min(b.maxX,camX));
+    camY=Math.max(b.minY,Math.min(b.maxY,camY));
+  }
+
+  function resistValue(value,min,max,strength=.24){
+    if(value<min) return min+(value-min)*strength;
+    if(value>max) return max+(value-max)*strength;
+    return value;
+  }
+
+  function applyDragResistance(nextX,nextY){
+    const b=cameraBounds();
+    camX=resistValue(nextX,b.minX,b.maxX,.24);
+    camY=resistValue(nextY,b.minY,b.maxY,.24);
+  }
+
+  function overshoot(){
+    const b=cameraBounds();
+    const ox=camX<b.minX ? camX-b.minX : camX>b.maxX ? camX-b.maxX : 0;
+    const oy=camY<b.minY ? camY-b.minY : camY>b.maxY ? camY-b.maxY : 0;
+    return {b,ox,oy};
+  }
+
+  function springToBounds(){
+    stopMotion();
+
+    const fromX=camX;
+    const fromY=camY;
+    const b=cameraBounds();
+    const toX=Math.max(b.minX,Math.min(b.maxX,fromX));
+    const toY=Math.max(b.minY,Math.min(b.maxY,fromY));
+
+    if(Math.abs(toX-fromX)<.2 && Math.abs(toY-fromY)<.2){
+      camX=toX;
+      camY=toY;
+      render();
+      return;
+    }
+
+    const begun=performance.now();
+    const duration=220;
+
+    function tick(now){
+      const t=Math.min(1,(now-begun)/duration);
+      const e=1-Math.pow(1-t,4);
+
+      camX=lerp(fromX,toX,e);
+      camY=lerp(fromY,toY,e);
+      render();
+
+      if(t<1){
+        snapRAF=requestAnimationFrame(tick);
+      }else{
+        snapRAF=0;
+        camX=toX;
+        camY=toY;
+        render();
+      }
+    }
+
+    snapRAF=requestAnimationFrame(tick);
+  }
+
+  function nearestCard(screenX,screenY){
+    let best=0,bestD=Infinity;
+    layout.forEach((p,i)=>{
+      const cx=p.x+p.w/2-camX;
+      const cy=p.y+p.h/2-camY;
+      const dx=cx-screenX,dy=cy-screenY;
+      const d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+   

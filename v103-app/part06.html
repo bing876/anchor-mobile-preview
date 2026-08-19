@@ -1,0 +1,632 @@
+       const targetEl=resolveObjectMorphTarget();
+        const targetViewportRect=targetEl.getBoundingClientRect();
+        const targetStyle=getComputedStyle(targetEl);
+
+        detailTargetRect=rectWithinHost(targetViewportRect,hostRect);
+        detailTargetRadius=parseFloat(targetStyle.borderRadius)||0;
+
+        // Same visual rhythm as the uploaded reference file.
+        detailTransitionBackdrop.style.transition='opacity .20s ease';
+        detailTransitionBackdrop.classList.add('visible');
+
+        detailTransitionCard.style.transition=[
+          'left .34s cubic-bezier(.2,.72,.24,1)',
+          'top .34s cubic-bezier(.2,.72,.24,1)',
+          'width .34s cubic-bezier(.2,.72,.24,1)',
+          'height .34s cubic-bezier(.2,.72,.24,1)',
+          'border-radius .34s cubic-bezier(.2,.72,.24,1)',
+          'opacity .18s ease'
+        ].join(',');
+
+        setMorphRect(detailTargetRect,detailTargetRadius);
+
+        // The actual mini-app fades in shortly after the morph begins,
+        // matching the reference panel reveal.
+        setTimeout(()=>{
+          if(detailOpen){
+            detailView.classList.add('morph-content-ready');
+          }
+        },170);
+
+        let finished=false;
+        const done=()=>{
+          if(finished) return;
+          finished=true;
+          detailTransitionCard.removeEventListener('transitionend',done);
+
+          if(!detailOpen) return;
+
+          detailTransitionCard.classList.remove('active');
+          detailTransitionCard.style.transition='none';
+
+          detailView.classList.remove('morph-opening','morph-content-ready');
+          detailMorphBusy=false;
+        };
+
+        detailTransitionCard.addEventListener('transitionend',done);
+        setTimeout(done,390);
+      });
+    });
+  }
+
+  function finishCloseDetail(){
+    detailOpen=false;
+    detailSwipeActive=false;
+    detailPointer=null;
+
+    detailView.classList.remove('open');
+    detailView.setAttribute('aria-hidden','true');
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.style.display='none';
+
+    document.body.classList.remove('detail-mode');
+    appRoot.classList.remove('detail-open');
+
+    detailObjectBody.innerHTML='';
+
+    resetDetailMorph();
+    resetCenterProgress(true);
+  }
+
+  function closeMinimalDetail(animated=true){
+    if(!detailOpen) return;
+
+    if(!animated || !detailSourceRect || !detailTargetRect){
+      finishCloseDetail();
+      return;
+    }
+
+    if(detailMorphBusy) return;
+    detailMorphBusy=true;
+
+    // If the mini-app was vertically scrolled, the close still begins
+    // from the same native hero geometry used by the opening transition.
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.classList.remove('morph-opening','morph-content-ready');
+    detailView.classList.add('morph-closing');
+
+    detailTransitionImage.src=detailSourceImage;
+    detailTransitionCard.style.transition='none';
+    setMorphRect(detailTargetRect,detailTargetRadius);
+    detailTransitionCard.classList.add('active');
+
+    // Let the native mini-app disappear underneath its visual clone.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        detailTransitionCard.style.transition=[
+          'left .34s cubic-bezier(.2,.72,.24,1)',
+          'top .34s cubic-bezier(.2,.72,.24,1)',
+          'width .34s cubic-bezier(.2,.72,.24,1)',
+          'height .34s cubic-bezier(.2,.72,.24,1)',
+          'border-radius .34s cubic-bezier(.2,.72,.24,1)',
+          'opacity .18s ease'
+        ].join(',');
+
+        setMorphRect(detailSourceRect,detailSourceRadius);
+
+        // As the card returns home, reveal the original feed beneath it.
+        setTimeout(()=>{
+          detailTransitionBackdrop.style.transition='opacity .20s ease';
+          detailTransitionBackdrop.classList.remove('visible');
+        },90);
+
+        let finished=false;
+        const done=()=>{
+          if(finished) return;
+          finished=true;
+          detailTransitionCard.removeEventListener('transitionend',done);
+          finishCloseDetail();
+        };
+
+        detailTransitionCard.addEventListener('transitionend',done);
+        setTimeout(done,390);
+      });
+    });
+  }
+
+  detailBackBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    closeMinimalDetail(true);
+  });
+
+  detailFavoriteBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    detailFavoriteBtn.classList.toggle('active');
+  });
+
+  detailMoreBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    detailMoreBtn.animate(
+      [{transform:'scale(1)'},{transform:'scale(.88)'},{transform:'scale(1)'}],
+      {duration:180,easing:'ease-out'}
+    );
+  });
+
+  detailObjectBody.addEventListener('click',e=>{
+    const btn=e.target.closest('.mini-action');
+    if(!btn) return;
+
+    e.stopPropagation();
+    const action=btn.dataset.action;
+
+    if(action==='video-play'){
+      btn.classList.toggle('playing');
+      return;
+    }
+
+    if(action==='music-play'){
+      btn.textContent=btn.textContent==='Ⅱ'?'▶':'Ⅱ';
+      return;
+    }
+
+    if(action==='font-large' || action==='font-small'){
+      const copy=detailObjectBody.querySelector('#readerCopy');
+      if(copy){
+        copy.classList.remove('large','small');
+        copy.classList.add(action==='font-large'?'large':'small');
+      }
+      return;
+    }
+
+    if(action==='mark'){
+      btn.textContent=btn.textContent==='已标记'?'标记':'已标记';
+      return;
+    }
+
+    if(action==='primary'){
+      btn.classList.toggle('done');
+      const original=btn.dataset.original || btn.textContent.trim();
+      btn.dataset.original=original;
+      btn.textContent=btn.classList.contains('done') ? '已完成' : original;
+      return;
+    }
+
+    if(action==='secondary'){
+      btn.classList.toggle('done');
+      const original=btn.dataset.original || btn.textContent.trim();
+      btn.dataset.original=original;
+      btn.textContent=btn.classList.contains('done') ? '已添加' : original;
+    }
+  });
+
+  detailView.addEventListener('pointerdown',e=>{
+    if(
+      !detailOpen ||
+      e.target.closest('.detail-back') ||
+      e.target.closest('button') ||
+      e.target.closest('.reader-tools') ||
+      e.target.closest('.object-actions')
+    ) return;
+
+    detailPointer=e.pointerId;
+    detailStartX=e.clientX;
+    detailStartY=e.clientY;
+    detailLastX=e.clientX;
+    detailLastT=performance.now();
+    detailVelocityX=0;
+    detailSwipeActive=false;
+
+  });
+
+  detailView.addEventListener('pointermove',e=>{
+    if(!detailOpen || e.pointerId!==detailPointer) return;
+
+    const dx=e.clientX-detailStartX;
+    const dy=e.clientY-detailStartY;
+    const width=Math.max(1,detailView.clientWidth);
+
+    if(!detailSwipeActive){
+      if(Math.abs(dx)<8 && Math.abs(dy)<8) return;
+
+      // Reference behavior: vertical intent cancels the close gesture.
+      if(Math.abs(dy)>Math.abs(dx)){
+        try{detailView.releasePointerCapture(detailPointer)}catch(_){}
+        detailPointer=null;
+        detailSwipeActive=false;
+        return;
+      }
+
+      // Rightward rollback starts only after clear intent.
+      if(dx<=10) return;
+
+      detailSwipeActive=true;
+      detailView.style.transition='none';
+    }
+
+    const follow=Math.max(0,Math.min(width*.92,dx));
+    detailView.style.transform=`translate3d(${follow}px,0,0)`;
+
+    const now=performance.now();
+    const dt=Math.max(1,now-detailLastT);
+    detailVelocityX=(e.clientX-detailLastX)/dt;
+    detailLastX=e.clientX;
+    detailLastT=now;
+
+    e.preventDefault();
+  });
+
+  function endDetailSwipe(e){
+    if(e.pointerId!==detailPointer) return;
+
+    const width=Math.max(1,detailView.clientWidth);
+    const dx=Math.max(0,e.clientX-detailStartX);
+    const shouldClose=
+      detailSwipeActive &&
+      dx>Math.min(94,width*.22);
+
+    detailPointer=null;
+
+    if(shouldClose){
+      // Preserve the right-swipe gesture as an input method,
+      // but finish with the same source-card collapse used by the back button.
+      detailView.style.transition='transform .12s cubic-bezier(.2,.72,.24,1)';
+      detailView.style.transform='translate3d(0,0,0)';
+
+      setTimeout(()=>{
+        if(detailOpen){
+          detailView.style.transition='none';
+          closeMinimalDetail(true);
+        }
+      },120);
+      return;
+    }
+
+    if(detailSwipeActive){
+      detailView.style.transition='transform .22s cubic-bezier(.2,.72,.24,1)';
+      detailView.style.transform='translate3d(0,0,0)';
+      setTimeout(()=>{
+        if(detailOpen) detailView.style.transition='none';
+      },240);
+    }
+
+    detailSwipeActive=false;
+  }
+
+  detailView.addEventListener('pointerup',endDetailSwipe);
+  detailView.addEventListener('pointercancel',endDetailSwipe);
+
+  /* =================================================================
+     04 · CONTINUOUS PINCH MORPH
+     - spread from TWO: current subject holds position; neighbors expand outward.
+     - pinch from BORDERLESS: same subject holds position; neighbors pack inward.
+     No page transition; both are the same world.
+     ================================================================= */
+  function beginPinch(){
+    if(pointers.size!==2)return;
+
+    cancelBorderlessCenter(true);
+    stopMotion();
+
+    const [a,b]=[...pointers.values()];
+    const rect=surface.getBoundingClientRect();
+    const anchor={
+      x:(a.x+b.x)/2-rect.left,
+      y:(a.y+b.y)/2-rect.top
+    };
+    const distance=Math.hypot(a.x-b.x,a.y-b.y);
+
+    const subject=nearestCard(anchor.x,anchor.y);
+    borderlessSubject=subject;
+
+    const fromMode=mode;
+    const toMode=fromMode==='two'?'borderless':'two';
+
+    const fromLayout=fromMode==='two'?twoLayout():borderlessLayout(subject);
+    const toLayout=toMode==='two'?twoLayout():borderlessLayout(subject);
+
+    // Re-anchor current geometry to exactly the stored mode layout.
+    layout=fromLayout;
+
+    surface.classList.add('pinch-live');
+
+    pinch={
+      startDistance:distance,
+      fromMode,
+      toMode,
+      fromLayout,
+      toLayout,
+      subject,
+      anchor,
+      progress:0
+    };
+
+    surface.classList.add('dragging');
+  }
+
+  function updatePinch(){
+    if(!pinch || pointers.size!==2)return;
+
+    const [a,b]=[...pointers.values()];
+    const rect=surface.getBoundingClientRect();
+    const center={
+      x:(a.x+b.x)/2-rect.left,
+      y:(a.y+b.y)/2-rect.top
+    };
+    const distance=Math.hypot(a.x-b.x,a.y-b.y);
+
+    // from TWO: spread -> 1
+    // from BORDERLESS: pinch together -> 1
+    let progress;
+    if(pinch.fromMode==='two'){
+      progress=(distance/pinch.startDistance-1)/.40;
+    }else{
+      progress=(1-distance/pinch.startDistance)/.34;
+    }
+    progress=Math.max(0,Math.min(1,progress));
+    pinch.progress=progress;
+
+    layout=blendedLayout(pinch.fromLayout,pinch.toLayout,progress);
+
+    // Subject stays under the two-hand center throughout the morph.
+    const subjectPos=layout[pinch.subject];
+    camX=subjectPos.x+subjectPos.w/2-center.x;
+    camY=subjectPos.y+subjectPos.h/2-center.y;
+
+    render();
+  }
+
+  function settlePinch(commit){
+    if(!pinch)return;
+
+    const state=pinch;
+    pinch=null;
+
+    const target=commit?1:0;
+    const start=state.progress;
+    const duration=commit?480:380;
+    const begun=performance.now();
+
+    const startVisual=state.fromMode==='two' ? start : 1-start;
+    const targetVisual=commit
+      ? (state.toMode==='borderless' ? 1 : 0)
+      : (state.fromMode==='borderless' ? 1 : 0);
+
+    stopSettle();
+
+    function tick(now){
+      const t=Math.min(1,(now-begun)/duration);
+      const e=1-Math.pow(1-t,4);
+      const p=lerp(start,target,e);
+      morphVisualAmount=lerp(startVisual,targetVisual,e);
+
+      layout=blendedLayout(state.fromLayout,state.toLayout,p);
+
+      const subjectPos=layout[state.subject];
+      camX=subjectPos.x+subjectPos.w/2-state.anchor.x;
+      camY=subjectPos.y+subjectPos.h/2-state.anchor.y;
+
+      render();
+
+      if(t<1){
+        settleRAF=requestAnimationFrame(tick);
+        return;
+      }
+
+      settleRAF=0;
+      mode=commit?state.toMode:state.fromMode;
+      layout=mode==='two'?twoLayout():borderlessLayout(state.subject);
+
+      surface.classList.toggle('two',mode==='two');
+      surface.classList.toggle('borderless',mode==='borderless');
+      surface.classList.remove('dragging','pinch-live');
+
+      morphVisualAmount=null;
+      clampCamera();
+      render();
+
+      if(mode==='borderless'){
+        scheduleBorderlessCenter(320);
+      }else{
+        resetCenterProgress(true);
+        scheduleTwoAlignment(150,null);
+      }
+    }
+
+    settleRAF=requestAnimationFrame(tick);
+  }
+
+  function stopSettle(){
+    if(settleRAF){
+      cancelAnimationFrame(settleRAF);
+      settleRAF=0;
+    }
+  }
+
+  /* =================================================================
+     05 · SINGLE-FINGER / MOUSE SCROLLING
+     Borderless interaction follows the uploaded v45 behavior:
+     vertical gestures suppress tiny x drift; clear side intent releases freely.
+     ================================================================= */
+  function stopMotion(){
+    if(inertiaRAF){cancelAnimationFrame(inertiaRAF);inertiaRAF=0}
+    if(snapRAF){cancelAnimationFrame(snapRAF);snapRAF=0}
+    if(twoAlignTimer){clearTimeout(twoAlignTimer);twoAlignTimer=0}
+    cancelBorderlessCenter(false);
+    stopSettle();
+  }
+
+  function twoColumnStep(){
+    const w=surface.clientWidth;
+    const gap=1;
+    const cardW=(w-gap)/2;
+    return cardW+gap;
+  }
+
+  function nearestTwoTargetX(sourceX=camX){
+    const b=cameraBounds();
+    const step=twoColumnStep();
+
+    const x=Math.max(b.minX,Math.min(b.maxX,sourceX));
+
+    // Every single column boundary is a valid complete two-column state:
+    // [col 0 + col 1], [col 1 + col 2], [col 2 + col 3] ...
+    // Therefore compare neighboring COLUMN grid lines, not page-width lines.
+    const leftIndex=Math.floor(x/step);
+    const rightIndex=Math.ceil(x/step);
+
+    const leftX=Math.max(b.minX,Math.min(b.maxX,leftIndex*step));
+    const rightX=Math.max(b.minX,Math.min(b.maxX,rightIndex*step));
+
+    const leftDistance=Math.abs(x-leftX);
+    const rightDistance=Math.abs(rightX-x);
+
+    return rightDistance < leftDistance ? rightX : leftX;
+  }
+
+  function softSnapTwoX(targetX=twoRecoveryTargetX){
+    if(mode!=='two') return;
+
+    if(snapRAF){
+      cancelAnimationFrame(snapRAF);
+      snapRAF=0;
+    }
+
+    const b=cameraBounds();
+    const fromX=camX;
+
+    const resolvedTarget=targetX===null
+      ? nearestTwoTargetX(fromX)
+      : Math.max(b.minX,Math.min(b.maxX,targetX));
+
+    twoRecoveryTargetX=resolvedTarget;
+
+    if(Math.abs(resolvedTarget-fromX)<.2){
+      camX=resolvedTarget;
+      render();
+      twoRecoveryTargetX=null;
+      return;
+    }
+
+    const duration=1800;
+    const begun=performance.now();
+
+    function easeInOutCubic(t){
+      return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    }
+
+    function tick(now){
+      const t=Math.min(1,(now-begun)/duration);
+      const e=easeInOutCubic(t);
+
+      // Only recover horizontal alignment.
+      // camY remains fully controlled by normal vertical inertia/scroll.
+      camX=lerp(fromX,resolvedTarget,e);
+      render();
+
+      if(t<1){
+        snapRAF=requestAnimationFrame(tick);
+      }else{
+        snapRAF=0;
+        camX=resolvedTarget;
+        twoRecoveryTargetX=null;
+        render();
+      }
+    }
+
+    snapRAF=requestAnimationFrame(tick);
+  }
+
+  function scheduleTwoAlignment(delay=320,targetX=null){
+    if(mode!=='two') return;
+    if(twoAlignTimer) clearTimeout(twoAlignTimer);
+
+    twoAlignTimer=setTimeout(()=>{
+      twoAlignTimer=0;
+
+      if(mode==='two' && !dragId && !pinch){
+        // Resolve at the LAST possible moment from the real resting position.
+        const resolvedTarget = targetX===null
+          ? nearestTwoTargetX(camX)
+          : targetX;
+
+        twoRecoveryTargetX=resolvedTarget;
+        softSnapTwoX(resolvedTarget);
+      }
+    },delay);
+  }
+
+  function inertia(ix,iy,settleTwo=false){
+    let prev=performance.now();
+
+    function tick(now){
+      const dt=Math.min(32,now-prev)/16.67;
+      prev=now;
+
+      camX+=ix*dt;
+      camY+=iy*dt;
+
+      const {ox,oy}=overshoot();
+
+      if(ox!==0){
+        ix+=(-ox*.032)*dt;
+        ix*=Math.pow(.84,dt);
+      }
+      if(oy!==0){
+        iy+=(-oy*.032)*dt;
+        iy*=Math.pow(.84,dt);
+      }
+
+      // A touch less friction than before so two-column gliding
+      // feels closer to borderless before slowly recovering.
+      const friction=Math.pow(.938,dt);
+      ix*=friction;
+      iy*=friction;
+
+      render();
+
+      const speed=Math.hypot(ix,iy);
+      const edgeDistance=Math.hypot(ox,oy);
+
+      if(speed>.14 || edgeDistance>.40){
+        inertiaRAF=requestAnimationFrame(tick);
+      }else{
+        inertiaRAF=0;
+        if(mode==='two'){
+          if(settleTwo && !snapRAF){
+            // Only free horizontal two-column panning needs post-motion recovery.
+            // Resolve from the TRUE final resting position.
+            twoRecoveryTargetX=null;
+            scheduleTwoAlignment(150,null);
+          }
+        }else if(mode==='borderless'){
+          scheduleBorderlessCenter(160);
+        }else{
+          springToBounds();
+        }
+      }
+    }
+
+    inertiaRAF=requestAnimationFrame(tick);
+  }
+
+  surface.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined && e.button!==0)return;
+
+    if(!detailOpen){
+      const card=e.target.closest?.('.card');
+      tapCandidateIndex=card ? Number(card.dataset.index) : -1;
+      tapStartX=e.clientX;
+      tapStartY=e.clientY;
+      tapStartTime=performance.now();
+      tapMoved=false;
+    }
+
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{surface.setPointerCapture(e.pointerId)}catch(_){}
+
+    if(pointers.size===1){
+      stopMotion();
+      twoRecoveryTargetX=null;
+
+      if(mode==='two'){
+        twoAlignedX=nearestTwoTargetX(camX);
+        twoIntent='pending';
+      }
+
+      dragId=e.pointerId;
+      dragStartX=lastX=e.clientX;
+      dragStartY=lastY=e.clientY;
+      dragStartCamX=camX;
+      dragStartCamY

@@ -1,0 +1,141 @@
+  });
+    return best;
+  }
+
+  function setSection(section){
+    currentSection=section;
+    const isHome=section==='home';
+
+    appRoot.classList.toggle('section-home-active', isHome);
+
+    bottomNavButtons.forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.section===section);
+    });
+
+    Object.entries(sectionViews).forEach(([key,view])=>{
+      const active=!isHome && key===section;
+      if(view){
+        view.classList.toggle('active', active);
+        view.setAttribute('aria-hidden', active ? 'false' : 'true');
+      }
+    });
+
+    if(!isHome){
+      cancelBorderlessCenter(true);
+      stopMotion();
+      if(detailOpen){
+        finishCloseDetail();
+      }
+      return;
+    }
+
+    // Returning from another section previously left two-column without any
+    // active recovery timer, because stopMotion() had cancelled it.
+    // When Home becomes visible again, restart the proper recovery flow.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        if(surface.clientWidth<=0 || surface.clientHeight<=0) return;
+
+        render();
+
+        if(mode==='two'){
+          scheduleTwoAlignment(90);
+        }else if(mode==='borderless'){
+          scheduleBorderlessCenter(140);
+        }else{
+          springToBounds();
+        }
+      });
+    });
+  }
+
+
+  function resetCenterProgress(clearReady=true){
+    if(centerProgressCard>=0 && cards[centerProgressCard]){
+      const c=cards[centerProgressCard];
+      c.classList.remove('center-progress-active','center-progress-ready');
+      const bar=c.querySelector('.center-progress i');
+      if(bar) bar.style.width='0%';
+    }
+
+    centerProgressCard=-1;
+    if(clearReady) centeredCard=-1;
+  }
+
+  function cancelBorderlessCenter(clearReady=false){
+    if(borderlessCenterTimer){
+      clearTimeout(borderlessCenterTimer);
+      borderlessCenterTimer=0;
+    }
+    if(borderlessCenterRAF){
+      cancelAnimationFrame(borderlessCenterRAF);
+      borderlessCenterRAF=0;
+    }
+
+    if(centerProgressCard>=0 && centerProgressCard!==centeredCard){
+      resetCenterProgress(clearReady);
+    }else if(clearReady){
+      resetCenterProgress(true);
+    }
+  }
+
+  function scheduleBorderlessCenter(delay=220){
+    if(mode!=='borderless' || detailOpen) return;
+
+    if(borderlessCenterTimer) clearTimeout(borderlessCenterTimer);
+    borderlessCenterTimer=setTimeout(()=>{
+      borderlessCenterTimer=0;
+      startBorderlessCenter();
+    },delay);
+  }
+
+  function startBorderlessCenter(){
+    if(mode!=='borderless' || detailOpen || pinch || dragId!==null) return;
+
+    if(borderlessCenterRAF){
+      cancelAnimationFrame(borderlessCenterRAF);
+      borderlessCenterRAF=0;
+    }
+
+    const targetScreenX=surface.clientWidth*.50;
+    const targetScreenY=surface.clientHeight*.49;
+    const subject=nearestCard(targetScreenX,targetScreenY);
+    const p=layout[subject];
+    if(!p) return;
+
+    const b=cameraBounds();
+    const fromX=camX;
+    const fromY=camY;
+
+    let toX=p.x+p.w/2-targetScreenX;
+    let toY=p.y+p.h/2-targetScreenY;
+    toX=Math.max(b.minX,Math.min(b.maxX,toX));
+    toY=Math.max(b.minY,Math.min(b.maxY,toY));
+
+    const distance=Math.hypot(toX-fromX,toY-fromY);
+    const centerDuration=Math.max(2400,Math.min(3800,2550+distance*1.35));
+    const extraProgressDuration=1500;
+    const totalDuration=centerDuration+extraProgressDuration;
+    const begun=performance.now();
+
+    if(centerProgressCard!==subject){
+      resetCenterProgress(true);
+    }
+
+    centerProgressCard=subject;
+    centeredCard=-1;
+
+    const card=cards[subject];
+    const bar=card?.querySelector('.center-progress i');
+
+    if(card){
+      card.classList.add('center-progress-active');
+      card.classList.remove('center-progress-ready');
+    }
+    if(bar) bar.style.width='0%';
+
+    function easeInOutCubic(t){
+      return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    }
+
+    function tick(now)

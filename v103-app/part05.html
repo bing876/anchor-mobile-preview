@@ -1,0 +1,529 @@
+ct.entries(sectionViews).forEach(([key,view])=>{
+      const active=!isHome && key===section;
+      if(view){
+        view.classList.toggle('active', active);
+        view.setAttribute('aria-hidden', active ? 'false' : 'true');
+      }
+    });
+
+    if(!isHome){
+      cancelBorderlessCenter(true);
+      stopMotion();
+      if(detailOpen){
+        finishCloseDetail();
+      }
+      return;
+    }
+
+    // Returning from another section previously left two-column without any
+    // active recovery timer, because stopMotion() had cancelled it.
+    // When Home becomes visible again, restart the proper recovery flow.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        if(surface.clientWidth<=0 || surface.clientHeight<=0) return;
+
+        render();
+
+        if(mode==='two'){
+          scheduleTwoAlignment(120,null);
+        }else if(mode==='borderless'){
+          scheduleBorderlessCenter(140);
+        }else{
+          springToBounds();
+        }
+      });
+    });
+  }
+
+
+  function resetCenterProgress(clearReady=true){
+    if(centerProgressCard>=0 && cards[centerProgressCard]){
+      const c=cards[centerProgressCard];
+      c.classList.remove('center-progress-active','center-progress-ready');
+      const bar=c.querySelector('.center-progress i');
+      if(bar) bar.style.width='0%';
+    }
+
+    centerProgressCard=-1;
+    if(clearReady) centeredCard=-1;
+  }
+
+  function cancelBorderlessCenter(clearReady=false){
+    if(borderlessCenterTimer){
+      clearTimeout(borderlessCenterTimer);
+      borderlessCenterTimer=0;
+    }
+    if(borderlessCenterRAF){
+      cancelAnimationFrame(borderlessCenterRAF);
+      borderlessCenterRAF=0;
+    }
+
+    if(centerProgressCard>=0 && centerProgressCard!==centeredCard){
+      resetCenterProgress(clearReady);
+    }else if(clearReady){
+      resetCenterProgress(true);
+    }
+  }
+
+  function scheduleBorderlessCenter(delay=220){
+    if(mode!=='borderless' || detailOpen) return;
+
+    if(borderlessCenterTimer) clearTimeout(borderlessCenterTimer);
+    borderlessCenterTimer=setTimeout(()=>{
+      borderlessCenterTimer=0;
+      startBorderlessCenter();
+    },delay);
+  }
+
+  function startBorderlessCenter(){
+    if(mode!=='borderless' || detailOpen || pinch || dragId!==null) return;
+
+    if(borderlessCenterRAF){
+      cancelAnimationFrame(borderlessCenterRAF);
+      borderlessCenterRAF=0;
+    }
+
+    const targetScreenX=surface.clientWidth*.50;
+    const targetScreenY=surface.clientHeight*.49;
+    const subject=nearestCard(targetScreenX,targetScreenY);
+    const p=layout[subject];
+    if(!p) return;
+
+    const b=cameraBounds();
+    const fromX=camX;
+    const fromY=camY;
+
+    let toX=p.x+p.w/2-targetScreenX;
+    let toY=p.y+p.h/2-targetScreenY;
+    toX=Math.max(b.minX,Math.min(b.maxX,toX));
+    toY=Math.max(b.minY,Math.min(b.maxY,toY));
+
+    const distance=Math.hypot(toX-fromX,toY-fromY);
+    const centerDuration=Math.max(2400,Math.min(3800,2550+distance*1.35));
+    const extraProgressDuration=1500;
+    const totalDuration=centerDuration+extraProgressDuration;
+    const begun=performance.now();
+
+    if(centerProgressCard!==subject){
+      resetCenterProgress(true);
+    }
+
+    centerProgressCard=subject;
+    centeredCard=-1;
+
+    const card=cards[subject];
+    const bar=card?.querySelector('.center-progress i');
+
+    if(card){
+      card.classList.add('center-progress-active');
+      card.classList.remove('center-progress-ready');
+    }
+    if(bar) bar.style.width='0%';
+
+    function easeInOutCubic(t){
+      return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    }
+
+    function tick(now){
+      const elapsed=Math.min(totalDuration,now-begun);
+
+      // Camera centering finishes first.
+      const centerT=Math.min(1,elapsed/centerDuration);
+      const centerEase=easeInOutCubic(centerT);
+
+      camX=lerp(fromX,toX,centerEase);
+      camY=lerp(fromY,toY,centerEase);
+
+      // Progress lasts 1.5s longer than the centering motion.
+      const progressT=Math.min(1,elapsed/totalDuration);
+      if(bar) bar.style.width=(progressT*100).toFixed(2)+'%';
+
+      render();
+
+      if(elapsed<totalDuration){
+        borderlessCenterRAF=requestAnimationFrame(tick);
+        return;
+      }
+
+      borderlessCenterRAF=0;
+      camX=toX;
+      camY=toY;
+
+      centeredCard=subject;
+      centerProgressCard=subject;
+
+      if(card){
+        card.classList.remove('center-progress-active');
+        card.classList.add('center-progress-ready');
+      }
+      if(bar) bar.style.width='100%';
+
+      render();
+
+      // Full progress = automatic entry.
+      // Use a direct timed handoff so no pointer/RAF state can swallow the transition.
+      setTimeout(()=>{
+        if(
+          mode==='borderless' &&
+          !detailOpen &&
+          centeredCard===subject
+        ){
+          openMinimalDetail(subject);
+        }
+      },80);
+    }
+
+    borderlessCenterRAF=requestAnimationFrame(tick);
+  }
+
+
+  function rectWithinHost(rect,hostRect){
+    return {
+      left:rect.left-hostRect.left,
+      top:rect.top-hostRect.top,
+      width:rect.width,
+      height:rect.height
+    };
+  }
+
+  function setMorphRect(rect,radius=0){
+    detailTransitionCard.style.left=rect.left+'px';
+    detailTransitionCard.style.top=rect.top+'px';
+    detailTransitionCard.style.width=rect.width+'px';
+    detailTransitionCard.style.height=rect.height+'px';
+    detailTransitionCard.style.borderRadius=radius+'px';
+  }
+
+  function resolveObjectMorphTarget(){
+    // Each object mini-app has a natural visual destination.
+    // This makes the same entry motion feel native to its object type.
+    const selectors=[
+      '.video-stage',
+      '.place-screen .object-hero',
+      '.feed-app-screen .object-hero',
+      '.tool-screen .tool-preview',
+      '.reader-screen .reader-cover',
+      '.music-screen .music-art'
+    ];
+
+    for(const selector of selectors){
+      const el=detailObjectBody.querySelector(selector);
+      if(el) return el;
+    }
+
+    return detailObjectBody.firstElementChild || detailObjectBody;
+  }
+
+  function restoreDetailSourceCard(){
+    if(detailSourceCard){
+      detailSourceCard.style.visibility='';
+    }
+  }
+
+  function resetDetailMorph(){
+    detailMorphBusy=false;
+
+    detailView.classList.remove(
+      'morph-opening',
+      'morph-content-ready',
+      'morph-closing'
+    );
+
+    detailTransitionBackdrop.classList.remove('visible');
+    detailTransitionBackdrop.style.transition='none';
+    detailTransitionBackdrop.style.opacity='';
+
+    detailTransitionCard.classList.remove('active');
+    detailTransitionCard.style.transition='none';
+    detailTransitionCard.style.left='';
+    detailTransitionCard.style.top='';
+    detailTransitionCard.style.width='';
+    detailTransitionCard.style.height='';
+    detailTransitionCard.style.borderRadius='';
+    detailTransitionCard.style.opacity='';
+    detailTransitionImage.src='';
+
+    restoreDetailSourceCard();
+
+    detailSourceCard=null;
+    detailSourceRect=null;
+    detailTargetRect=null;
+    detailSourceRadius=0;
+    detailTargetRadius=0;
+    detailSourceImage='';
+  }
+
+  function icon(name){
+    const icons={
+      pin:`<svg viewBox="0 0 24 24"><path d="M12 21s6-5.2 6-11A6 6 0 1 0 6 10c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2.1"/></svg>`,
+      route:`<svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18c5 0 2-10 8-10"/></svg>`,
+      star:`<svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.9Z"/></svg>`,
+      play:`<svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></svg>`,
+      arrow:`<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m14 7 5 5-5 5"/></svg>`
+    };
+    return icons[name]||'';
+  }
+
+  function renderPlace(obj,img){
+    return `
+      <div class="object-screen place-screen" style="--accent:${obj.accent}">
+        <div class="object-hero">
+          <img src="${img}" alt="">
+          <div class="place-overlay">
+            <div class="place-title">${obj.title}</div>
+            <div class="place-meta">${obj.subtitle}</div>
+          </div>
+        </div>
+        <div class="object-sheet">
+          <div class="object-eyebrow">${obj.label}</div>
+          <div class="object-title">${obj.title}</div>
+          <div class="object-subtitle">${obj.subtitle}</div>
+
+          <div class="object-actions">
+            <button class="object-primary mini-action" data-action="primary">${icon('pin')} ${obj.primary}</button>
+            <button class="object-secondary mini-action" data-action="secondary">${obj.secondary}</button>
+          </div>
+
+          <div class="context-pills">
+            ${obj.meta.map(v=>`<span class="context-pill">${v}</span>`).join('')}
+          </div>
+
+          <div class="object-grid" style="margin-top:4cqw">
+            <div class="object-card"><div class="object-card-k">建议时间</div><div class="object-card-v">17:40</div></div>
+            <div class="object-card"><div class="object-card-k">距离</div><div class="object-card-v">2.8 km</div></div>
+            <div class="object-card"><div class="object-card-k">天气</div><div class="object-card-v">18° 晴</div></div>
+            <div class="object-card"><div class="object-card-k">适合</div><div class="object-card-v">${obj.meta[1]||'探索'}</div></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderVideo(obj,img){
+    return `
+      <div class="object-screen video-screen">
+        <div class="video-stage">
+          <img src="${img}" alt="">
+          <button class="video-center-control mini-action" data-action="video-play" type="button"><i></i></button>
+          <div class="video-bottom">
+            <div class="video-title">${obj.title}</div>
+            <div class="video-sub">${obj.subtitle}</div>
+            <div class="video-progress"><i></i></div>
+            <div class="video-time"><span>00:32</span><span>08:32</span></div>
+            <div class="object-actions">
+              <button class="object-primary mini-action" data-action="primary">${obj.primary}</button>
+              <button class="object-secondary mini-action" data-action="secondary">${obj.secondary}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTool(obj,img){
+    return `
+      <div class="object-screen tool-screen">
+        <div class="tool-app-head">
+          <div class="tool-app-icon"><img src="${img}" alt=""></div>
+          <div>
+            <div class="tool-app-name">${obj.title}</div>
+            <div class="tool-app-desc">${obj.subtitle}</div>
+          </div>
+        </div>
+
+        <div class="tool-step">
+          <div class="tool-step-head">
+            <span class="tool-step-num">1</span>
+            <span class="tool-step-title">选择内容</span>
+          </div>
+          <div class="tool-preview"><img src="${img}" alt=""></div>
+        </div>
+
+        <div class="tool-step">
+          <div class="tool-step-head">
+            <span class="tool-step-num">2</span>
+            <span class="tool-step-title">AI 处理中</span>
+          </div>
+          <div class="object-subtitle">识别当前对象并准备可执行能力。</div>
+          <div class="tool-progress"><i></i></div>
+        </div>
+
+        <div class="tool-step">
+          <div class="tool-step-head">
+            <span class="tool-step-num">3</span>
+            <span class="tool-step-title">结果</span>
+          </div>
+          <div class="tool-result-grid">
+            <div><img src="${img}" alt=""></div>
+            <div class="checker"><img src="${img}" alt=""></div>
+          </div>
+          <div class="object-actions">
+            <button class="object-secondary mini-action" data-action="secondary">继续编辑</button>
+            <button class="object-primary mini-action" data-action="primary">${obj.primary}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderReader(obj,img){
+    return `
+      <div class="object-screen reader-screen">
+        <div class="reader-cover"><img src="${img}" alt=""></div>
+        <div class="reader-heading">${obj.title}</div>
+        <div class="reader-deck">${obj.subtitle}</div>
+        <div class="reader-tools">
+          <button class="reader-tool mini-action" data-action="font-small">A−</button>
+          <button class="reader-tool mini-action" data-action="font-large">A＋</button>
+          <button class="reader-tool mini-action" data-action="mark">标记</button>
+        </div>
+        <div class="reader-copy" id="readerCopy">
+          这不是一个传统详情页。当前对象被识别为“${obj.label}”后，直接进入最适合它的使用方式。
+          你可以继续阅读、做标记、让助理解释，也可以把它变成自己的知识对象。
+          <br><br>
+          每一种对象都保留原始内容，同时只暴露此刻真正有意义的动作。
+        </div>
+        <div class="object-actions">
+          <button class="object-primary mini-action" data-action="primary">${obj.primary}</button>
+          <button class="object-secondary mini-action" data-action="secondary">${obj.secondary}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMusic(obj,img){
+    return `
+      <div class="object-screen music-screen">
+        <div class="music-art"><img src="${img}" alt=""></div>
+        <div class="music-name">${obj.title}</div>
+        <div class="music-artist">${obj.subtitle}</div>
+        <div class="music-track"><i id="musicDetailProgress"></i></div>
+        <div class="music-times"><span id="musicDetailNow">1:08</span><span>3:42</span></div>
+        <div class="music-controls">
+          <button class="music-control-btn mini-action" data-action="prev">‹‹</button>
+          <button class="music-control-btn main mini-action" data-action="music-play">▶</button>
+          <button class="music-control-btn mini-action" data-action="next">››</button>
+        </div>
+        <div class="object-actions">
+          <button class="object-primary mini-action" data-action="primary">${obj.primary}</button>
+          <button class="object-secondary mini-action" data-action="secondary">${obj.secondary}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderFeedApp(obj,img){
+    const labels = {
+      food:['菜单 / 菜品','附近 / 路线','收藏 / 记录'],
+      wardrobe:['单品','搭配','我的衣橱'],
+      portrait:['人物','共同记录','相册'],
+      workspace:['当前项目','下一步','相关文件'],
+      art:['素材','画布','版本'],
+      nature:['识别结果','养护','观察记录']
+    };
+    const rows=labels[obj.kind]||['当前对象','下一步','收藏'];
+    return `
+      <div class="object-screen feed-app-screen">
+        <div class="object-hero"><img src="${img}" alt=""></div>
+        <div class="object-sheet">
+          <div class="object-eyebrow">${obj.label}</div>
+          <div class="object-title">${obj.title}</div>
+          <div class="object-subtitle">${obj.subtitle}</div>
+
+          <div class="context-pills">
+            ${obj.meta.map(v=>`<span class="context-pill">${v}</span>`).join('')}
+          </div>
+
+          <div class="quick-list">
+            ${rows.map((r,i)=>`<div class="quick-list-item"><span>${r}</span><span>${i===0?'打开':'查看'}</span></div>`).join('')}
+          </div>
+
+          <div class="object-actions">
+            <button class="object-primary mini-action" data-action="primary">${obj.primary}</button>
+            <button class="object-secondary mini-action" data-action="secondary">${obj.secondary}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderObjectDetail(index){
+    const obj=OBJECTS[Math.abs(Number(index)||0)%OBJECTS.length];
+    const img=IMAGES[Math.abs(Number(index)||0)%IMAGES.length];
+
+    detailKindLabel.textContent=obj.label;
+    detailKindDot.style.background=obj.accent;
+    detailKindDot.style.color=obj.accent;
+    detailFavoriteBtn.classList.remove('active');
+
+    if(obj.kind==='place'){
+      detailObjectBody.innerHTML=renderPlace(obj,img);
+    }else if(obj.kind==='video'){
+      detailObjectBody.innerHTML=renderVideo(obj,img);
+    }else if(obj.kind==='tool'){
+      detailObjectBody.innerHTML=renderTool(obj,img);
+    }else if(obj.kind==='reader'){
+      detailObjectBody.innerHTML=renderReader(obj,img);
+    }else if(obj.kind==='music'){
+      detailObjectBody.innerHTML=renderMusic(obj,img);
+    }else{
+      detailObjectBody.innerHTML=renderFeedApp(obj,img);
+    }
+
+    detailObjectBody.scrollTop=0;
+    detailView.dataset.kind=obj.kind;
+    detailView.dataset.index=String(index);
+  }
+
+  function openMinimalDetail(index){
+    if(detailOpen || detailMorphBusy) return;
+
+    cancelBorderlessCenter(false);
+    stopMotion();
+
+    const sourceCard=cards[index];
+    if(!sourceCard) return;
+
+    const sourceImage=sourceCard.querySelector('img');
+    if(!sourceImage) return;
+
+    // Capture the exact feed-card geometry BEFORE opening the overlay.
+    const cardRect=sourceCard.getBoundingClientRect();
+    const sourceStyle=getComputedStyle(sourceCard);
+
+    detailOpen=true;
+    detailMorphBusy=true;
+    detailSourceCard=sourceCard;
+    detailSourceImage=sourceImage.src;
+    detailSourceRadius=parseFloat(sourceStyle.borderRadius)||0;
+
+    renderObjectDetail(index);
+
+    document.body.classList.add('detail-mode');
+    appRoot.classList.add('detail-open');
+
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.style.display='block';
+    detailView.classList.add('open','morph-opening');
+    detailView.classList.remove('morph-closing','morph-content-ready');
+    detailView.setAttribute('aria-hidden','false');
+
+    // Convert viewport coordinates to the detail overlay's coordinate space.
+    const hostRect=detailView.getBoundingClientRect();
+    detailSourceRect=rectWithinHost(cardRect,hostRect);
+
+    detailTransitionImage.src=detailSourceImage;
+    detailTransitionCard.style.transition='none';
+    setMorphRect(detailSourceRect,detailSourceRadius);
+    detailTransitionCard.classList.add('active');
+
+    // The transition clone now covers the original card perfectly.
+    sourceCard.style.visibility='hidden';
+
+    detailTransitionBackdrop.style.transition='none';
+    detailTransitionBackdrop.style.opacity='0';
+    detailTransitionBackdrop.classList.remove('visible');
+
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{

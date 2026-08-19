@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#050505">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/svg+xml" href="./anchor-logo.svg">
-<title>DIMSPACE Mobile · v3.3</title>
+<title>DIMSPACE Mobile · v3.4</title>
 <style>
 html,body{margin:0;width:100%;height:100%;background:#050505;color:#fff;overflow:hidden}
 body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif}
@@ -31,36 +31,95 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
     }
 
     const parts=[
-      './v33plain/part01.txt',
-      './v33plain/part02.txt',
-      './v33plain/part03.txt',
-      './v33plain/part04_1.txt',
-      './v33plain/part04_2.txt',
-      './v33plain/part04_3_a.txt',
-      './v33plain/part04_3_b.txt',
-      './v33plain/part04_4.txt',
-      './v33plain/part05_1_a.txt',
-      './v33plain/part05_1_b.txt',
-      './v33plain/part05_2.txt',
-      './v33plain/part05_3_a.txt',
-      './v33plain/part05_3_b.txt',
-      './v33plain/part05_4.txt',
-      './v33plain/part06.txt',
-      './v33plain/part07a.txt',
-      './v33plain/part07b.txt'
+      './v33plain/part01.txt','./v33plain/part02.txt','./v33plain/part03.txt',
+      './v33plain/part04_1.txt','./v33plain/part04_2.txt','./v33plain/part04_3_a.txt','./v33plain/part04_3_b.txt','./v33plain/part04_4.txt',
+      './v33plain/part05_1_a.txt','./v33plain/part05_1_b.txt','./v33plain/part05_2.txt','./v33plain/part05_3_a.txt','./v33plain/part05_3_b.txt','./v33plain/part05_4.txt',
+      './v33plain/part06.txt','./v33plain/part07a.txt','./v33plain/part07b.txt'
     ];
 
     const chunks=[];
     for(const url of parts){
-      const r=await fetch(url+'?v=33-plain-v3',{cache:'no-store'});
+      const r=await fetch(url+'?v=34-real-phone',{cache:'no-store'});
       if(!r.ok) throw new Error(url+' HTTP '+r.status);
       chunks.push(await r.text());
     }
 
-    const html=chunks.join('');
+    let html=chunks.join('');
     if(!html.startsWith('<!doctype html>')) throw new Error('HTML 开头校验失败');
     if(!html.includes('</html>')) throw new Error('HTML 结尾校验失败');
     if(!html.includes('dimspace-star-clear-all-feed-modes')) throw new Error('当前版本校验失败');
+
+    /* v3.4: two-column direct movement = borderless movement feel. */
+    {
+      const anchor="surface.addEventListener('pointermove',e=>{";
+      const p=html.indexOf(anchor);
+      const s=html.indexOf("    if(mode==='two'){",p);
+      const e=html.indexOf("\n  });\n\n  function endPointer",s);
+      if(p<0||s<0||e<0) throw new Error('双列拖拽补丁定位失败');
+      const replacement=`    if(mode==='two'){
+      applyDragResistance(
+        dragStartCamX-dx,
+        dragStartCamY-dy
+      );
+
+      const now=performance.now();
+      const dt=Math.max(1,now-lastT);
+      velX=-(e.clientX-lastX)/dt;
+      velY=-(e.clientY-lastY)/dt;
+
+      lastX=e.clientX;
+      lastY=e.clientY;
+      lastT=now;
+
+      clampCamera();
+      render();
+      e.preventDefault();
+      return;
+    }
+`;
+      html=html.slice(0,s)+replacement+html.slice(e);
+    }
+
+    /* Trackpad/mouse scrolling follows the same free movement model. */
+    {
+      const anchor="surface.addEventListener('wheel',e=>{";
+      const p=html.indexOf(anchor);
+      const s=html.indexOf("    if(mode==='two'){",p);
+      const e=html.indexOf("\n    if(wheelAxis==='vertical'){",s);
+      if(p<0||s<0||e<0) throw new Error('双列滚轮补丁定位失败');
+      const replacement=`    if(mode==='two'){
+      applyDragResistance(camX+dx,camY+dy);
+      render();
+
+      clearTimeout(wheelTimer);
+      wheelTimer=setTimeout(()=>{
+        const finalTarget=nearestTwoTargetX(camX);
+        twoRecoveryTargetX=null;
+        scheduleTwoAlignment(180,finalTarget);
+        resetWheel();
+      },140);
+
+      e.preventDefault();
+      return;
+    }
+`;
+      html=html.slice(0,s)+replacement+html.slice(e);
+    }
+
+    /* Real phone deployment: simulator shell becomes invisible/full-viewport. */
+    const realPhoneCSS=`<style id="dimspace-real-phone-deploy-v34">
+html,body{width:100%!important;height:100%!important;min-height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#050505!important}
+body{display:block!important}
+.device-stage,.device-shell,.device-shell>.phone,.device-shell .screen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important;background:#050505!important;box-shadow:none!important;overflow:hidden!important;transform:none!important;contain:none!important}
+.device-shell::before,.device-shell::after{display:none!important}
+.sim-system-ui{display:none!important}
+.device-shell .status-lock{display:flex!important}
+.device-shell .app{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;--safe-top:clamp(48px,13.41cqw,54px)!important;--safe-bottom:max(env(safe-area-inset-bottom,0px),24px)!important;border-radius:0!important;overflow:hidden!important;background:#050505!important}
+.device-shell .topbar{top:var(--safe-top)!important}
+</style>`;
+    html=html.replace('</head>',realPhoneCSS+'</head>');
+    html=html.replace(' data-simulator-frozen="true"','');
+    html=html.replace(/<title>[\s\S]*?<\/title>/,'<title>DIMSPACE Mobile · v3.4 Real Phone</title>');
 
     const parsed=new DOMParser().parseFromString(html,'text/html');
     const inlineScripts=[...parsed.querySelectorAll('script')].filter(s=>!s.src);
@@ -75,7 +134,7 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
   }catch(err){
     console.error(err);
     if(state){
-      state.innerHTML='DIMSPACE Mobile 加载失败<br><span style="opacity:.72">'+String(err && err.message || err)+'</span>';
+      state.innerHTML='DIMSPACE Mobile 加载失败<br><span style="opacity:.72">'+String(err&&err.message||err)+'</span>';
     }
   }
 })();

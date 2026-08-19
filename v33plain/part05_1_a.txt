@@ -1,0 +1,60 @@
+y-vh/2)/(vh*.46);
+      const dist=Math.min(1.35,Math.hypot(nx,ny));
+      const raw=Math.max(0,1-dist/1.02);
+      const focus=smooth(raw);
+
+      const targetBrightness=.42+focus*.74;
+      const targetSaturation=.62+focus*.38;
+      const targetContrast=.92+focus*.10;
+      const targetOpacity=.84+focus*.16;
+
+      const brightness=lerp(1,targetBrightness,borderlessAmount);
+      const saturation=lerp(1,targetSaturation,borderlessAmount);
+      const contrast=lerp(1,targetContrast,borderlessAmount);
+      const opacity=lerp(1,targetOpacity,borderlessAmount);
+
+      img.style.filter=
+        `brightness(${brightness.toFixed(3)}) `+
+        `saturate(${saturation.toFixed(3)}) `+
+        `contrast(${contrast.toFixed(3)})`;
+      img.style.opacity=opacity.toFixed(3);
+
+      const glow=.06*focus*borderlessAmount;
+      el.style.boxShadow =
+        `inset 0 0 0 1px rgba(255,255,255,${(.05+.01*borderlessAmount).toFixed(3)}), ` +
+        `0 1px 0 rgba(255,255,255,.02), ` +
+        `0 0 ${Math.round(18*focus*borderlessAmount)}px rgba(255,255,255,${glow.toFixed(3)})`;
+    });
+  }
+
+  function applyLayout(nextLayout,instant=false){
+    layout=nextLayout;
+    cards.forEach(el=>el.classList.toggle('instant',instant));
+    render();
+    requestAnimationFrame(()=>cards.forEach(el=>el.classList.remove('instant')));
+  }
+
+  function cameraBounds(){
+    if(mode==='two'){
+      const w=surface.clientWidth;
+      const cardH=((w-1)/2)*1.3333;
+      const maxY=12*(cardH+1)-surface.clientHeight+100;
+      const pages=Math.ceil(CARD_COUNT/24);
+
+      return {
+        minX:0,
+        maxX:Math.max(0,(pages-1)*w),
+        minY:0,
+        maxY:Math.max(0,maxY)
+      };
+    }
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+    const xs=layout.map(p=>p.x);
+    const ys=layout.map(p=>p.y);
+    const maxXs=layout.map(p=>p.x+p.w);
+    const maxYs=layout.map(p=>p.y+p.h);
+
+    return {
+      minX:Math.min(...xs)-vw

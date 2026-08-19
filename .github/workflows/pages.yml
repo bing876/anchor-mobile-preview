@@ -29,10 +29,98 @@ jobs:
         with:
           enablement: true
 
+      - name: Build real-phone v10.3.0
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, gzip, re, shutil
+
+          loader = Path('v10-3-0.html').read_text(encoding='utf-8')
+          match = re.search(r"const b64='([^']+)'", loader, re.S)
+          if not match:
+              raise SystemExit('v10.3.0 payload not found')
+
+          html = gzip.decompress(base64.b64decode(match.group(1))).decode('utf-8')
+
+          # Keep the latest v10.3.0 product/interaction layer, remove only simulator chrome.
+          html = re.sub(
+              r'\n<style id="simulator-1290x2796">[\s\S]*?</style>\n',
+              '\n',
+              html,
+              count=1,
+          )
+          html = html.replace(
+              '<div class="device-stage"><div class="device-shell"><div class="phone">',
+              '<div class="phone">',
+              1,
+          )
+          html = html.replace(
+              '  --safe-top:13.41cqw;\n  --safe-bottom:7.73cqw;',
+              '  --safe-top:env(safe-area-inset-top, 0px);\n  --safe-bottom:env(safe-area-inset-bottom, 0px);',
+              1,
+          )
+          html = html.replace(
+              '.status-lock{\n  position:absolute;',
+              '.status-lock{\n  display:none !important;\n  position:absolute;',
+              1,
+          )
+          html = re.sub(
+              r'<title>.*?</title>',
+              '<title>DIMSPACE Mobile · v10.3.0 · Real Phone</title>',
+              html,
+              count=1,
+              flags=re.S,
+          )
+
+          real_phone = r'''
+          <style id="real-phone-web-v10-3-0">
+          html,body{
+            width:100%;height:100%;min-height:100%;margin:0;padding:0!important;
+            overflow:hidden;background:#050505!important;
+          }
+          body{display:block!important;position:fixed;inset:0}
+          .phone,.screen,.app{
+            position:fixed!important;inset:0!important;
+            width:100vw!important;height:100vh!important;height:100dvh!important;
+            max-width:none!important;max-height:none!important;
+            margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+            box-shadow:none!important;transform:none!important;background:#050505!important;
+          }
+          .screen{overflow:hidden!important;container-type:inline-size!important}
+          .status-lock{display:none!important}
+          .topbar{top:var(--safe-top)!important}
+          .bottom{
+            height:calc(var(--bottom-core) + var(--safe-bottom) + var(--bottom-bg-extra))!important;
+            padding-bottom:var(--safe-bottom)!important;
+          }
+          @supports not (height:100dvh){.phone,.screen,.app{height:100vh!important}}
+          </style>
+          '''
+          html = html.replace('</head>', real_phone + '\n</head>', 1)
+
+          dist = Path('dist')
+          dist.mkdir(exist_ok=True)
+          (dist / 'index.html').write_text(html, encoding='utf-8')
+          for name in ['icon.svg', 'manifest.webmanifest', '.nojekyll']:
+              src = Path(name)
+              if src.exists():
+                  shutil.copy2(src, dist / name)
+
+          # Hard guards: the public page must be the real app, never the simulator wrapper.
+          output = (dist / 'index.html').read_text(encoding='utf-8')
+          assert 'device-stage' not in output
+          assert 'device-shell' not in output
+          assert 'simulator-1290x2796' not in output
+          assert 'env(safe-area-inset-top' in output
+          assert 'media-footer' in output
+          print('Built real-phone page:', len(output), 'bytes')
+          PY
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ./dist
 
       - name: Deploy
         id: deployment

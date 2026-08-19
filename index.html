@@ -34,8 +34,14 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       './v33plain/part01.txt',
       './v33plain/part02.txt',
       './v33plain/part03.txt',
-      './v33plain/part04.txt',
-      './v33plain/part05.txt',
+      './v33plain/part04_1.txt',
+      './v33plain/part04_2.txt',
+      './v33plain/part04_3.txt',
+      './v33plain/part04_4.txt',
+      './v33plain/part05_1.txt',
+      './v33plain/part05_2.txt',
+      './v33plain/part05_3.txt',
+      './v33plain/part05_4.txt',
       './v33plain/part06.txt',
       './v33plain/part07a.txt',
       './v33plain/part07b.txt'
@@ -43,7 +49,7 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
 
     const chunks=[];
     for(const url of parts){
-      const r=await fetch(url+'?v=33-plain-final',{cache:'no-store'});
+      const r=await fetch(url+'?v=33-plain-v2',{cache:'no-store'});
       if(!r.ok) throw new Error(url+' HTTP '+r.status);
       chunks.push(await r.text());
     }

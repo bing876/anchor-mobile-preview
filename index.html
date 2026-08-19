@@ -10,15 +10,61 @@
 <meta name="apple-mobile-web-app-title" content="锚点">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<title>DIMSPACE Mobile · v10.3.0</title>
+<title>DIMSPACE Mobile · v10.3.1</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505}
-body{position:fixed;inset:0}
-iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#050505;display:block}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#050505;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}body{display:grid;place-items:center;overflow:hidden}.loading{font-size:14px;opacity:.58}.loading small{display:block;margin-top:9px;text-align:center;font-size:11px;opacity:.55}
 </style>
 </head>
 <body>
-<iframe id="app" src="./v10-3-0.html" title="DIMSPACE Mobile v10.3.0"></iframe>
+<div class="loading">DIMSPACE Mobile · loading…<small id="state">正在加载最新预览</small></div>
+<script>
+(async()=>{
+  const state=document.getElementById('state');
+  const fallback=()=>location.replace('./product.html?v=1031');
+  const decodeBase64=s=>Uint8Array.from(atob(s.trim()),c=>c.charCodeAt(0));
+  const render=html=>{document.open();document.write(html);document.close()};
+  const getPayload=async()=>{
+    const r=await fetch('./v10-data-p0.txt?v=1031',{cache:'no-store'});
+    if(!r.ok) throw new Error('payload '+r.status);
+    return decodeBase64(await r.text());
+  };
+  const nativeGunzip=async bin=>{
+    if(typeof DecompressionStream==='undefined') throw new Error('native gzip unsupported');
+    const ds=new DecompressionStream('gzip');
+    return await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
+  };
+  const loadFflate=()=>new Promise((resolve,reject)=>{
+    if(window.fflate)return resolve(window.fflate);
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js';
+    s.async=true;
+    s.onload=()=>window.fflate?resolve(window.fflate):reject(new Error('fflate missing'));
+    s.onerror=()=>reject(new Error('fflate load failed'));
+    document.head.appendChild(s);
+  });
+  try{
+    const bin=await getPayload();
+    try{
+      state.textContent='正在启动';
+      render(await nativeGunzip(bin));
+      return;
+    }catch(nativeError){
+      state.textContent='正在兼容当前手机浏览器';
+      try{
+        const fflate=await loadFflate();
+        const html=new TextDecoder().decode(fflate.gunzipSync(bin));
+        render(html);
+        return;
+      }catch(compatError){
+        console.warn(nativeError,compatError);
+        fallback();
+      }
+    }
+  }catch(e){
+    console.warn(e);
+    fallback();
+  }
+})().catch(()=>location.replace('./product.html?v=1031'));
+</script>
 </body>
 </html>

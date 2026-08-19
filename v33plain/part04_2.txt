@@ -1,0 +1,86 @@
+e-width="2" stroke-linecap="round"/>
+          <path d="M4.25 7.65C6.86 5.35 10.14 5.35 12.75 7.65" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7.15 10.45C8 9.78 9 9.78 9.85 10.45" stroke="white" stroke-width="2.1" stroke-linecap="round"/>
+        </svg>
+        <div class="battery">84</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =================================================================
+     01 · DATA
+     只保留首页对象类型；详情页完全不存在。
+     ================================================================= */
+  const IMAGES=[
+    'https://images.unsplash.com/photo-1748050868959-6cf84718730d?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1611035234981-b31460d3912c?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1470309864661-68328b2cd0a5?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1727434032773-af3cd98375ba?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1506792006437-256b665541e2?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&fm=jpg&q=78&w=1600',
+    'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&fm=jpg&q=78&w=1600'
+  ];
+  const TYPES=['video','image','music','app','image','video','music','app','image','video','app','music'];
+  const CARD_COUNT=120;
+
+  const surface=document.getElementById('surface');
+  const world=document.getElementById('world');
+  const ambientLight=document.querySelector('.ambient-light');
+  const edgeDark=document.querySelector('.edge-dark');
+  const appRoot=document.querySelector('.app');
+  const detailView=document.getElementById('detailView');
+  const detailMedia=document.getElementById('detailMedia');
+  const detailBackBtn=document.getElementById('detailBackBtn');
+
+  const sectionViews={
+    daily:document.getElementById('dailyView'),
+    messages:document.getElementById('messageView'),
+    mine:document.getElementById('mineView')
+  };
+  const bottomNavButtons=[...document.querySelectorAll('.bottom .nav[data-section]')];
+  let currentSection='home';
+
+  const cards=[];
+  const pointers=new Map();
+
+  let mode='two';                 // two | borderless
+  let layout=[];
+  let camX=0;
+  let camY=0;
+
+  let dragId=null;
+  let dragStartX=0,dragStartY=0;
+  let dragStartCamX=0,dragStartCamY=0;
+  let lastX=0,lastY=0,lastT=0;
+  let velX=0,velY=0;
+  let gestureAxis='pending';
+  let sideIntentFrames=0;
+  let twoHorizontalUnlocked=false;
+  let twoVerticalLockedX=null;
+
+  // Native click can be swallowed by pointer capture.
+  // Detect card taps at the canvas layer instead.
+  let tapCandidateIndex=-1;
+  let tapStartX=0;
+  let tapStartY=0;
+  let tapStartTime=0;
+  let tapMoved=false;
+  let inertiaRAF=0;
+  let snapRAF=0;
+  let twoAlignTimer=0;
+  let twoRecoveryTargetX=null;
+
+  // Borderless mapping is anchored around the subject tha

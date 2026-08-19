@@ -1,0 +1,598 @@
+-.04em;
+}
+.music-artist{
+  margin-top:1.2cqw;
+  color:rgba(255,255,255,.46);
+  font-size:3cqw;
+}
+.music-track{
+  margin-top:5cqw;
+  height:.8cqw;
+  border-radius:99px;
+  background:rgba(255,255,255,.14);
+  overflow:hidden;
+}
+.music-track i{
+  display:block;
+  width:34%;
+  height:100%;
+  background:#fff;
+}
+.music-times{
+  display:flex;
+  justify-content:space-between;
+  margin-top:1.5cqw;
+  color:rgba(255,255,255,.38);
+  font-size:2.4cqw;
+}
+.music-controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8cqw;
+  margin-top:5cqw;
+}
+.music-control-btn{
+  width:10cqw;
+  height:10cqw;
+  border:0;
+  background:transparent;
+  color:#fff;
+  font-size:6cqw;
+}
+.music-control-btn.main{
+  width:16cqw;
+  height:16cqw;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:#111;
+  font-size:5cqw;
+}
+
+/* ---------- FOOD / LIFESTYLE / WORK ---------- */
+.feed-app-screen .object-hero{
+  height:58cqh;
+}
+.feed-app-screen .object-sheet{
+  margin-top:-10cqw;
+}
+.quick-list{
+  margin-top:3.5cqw;
+  display:grid;
+  gap:1.6cqw;
+}
+.quick-list-item{
+  min-height:10.8cqw;
+  padding:0 3.4cqw;
+  border-radius:3cqw;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:2cqw;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.05);
+  color:rgba(255,255,255,.78);
+  font-size:2.95cqw;
+}
+.quick-list-item span:last-child{
+  color:rgba(255,255,255,.36);
+}
+
+/* --- keep product chrome hidden inside object --- */
+body.detail-mode .status-lock,
+body.detail-mode .top-eat-shadow,
+body.detail-mode .topbar,
+body.detail-mode .bottom{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body.detail-mode .surface{
+  pointer-events:none !important;
+}
+
+
+</style>
+
+
+<style id="reference-card-morph-v8-9">
+/* ==========================================================
+   DIMSPACE Mobile · Reference Card Morph v8.9
+   Based on the uploaded borderless detail transition:
+   source card expands into the object's native mini-app,
+   then collapses back to the exact source position.
+   ========================================================== */
+
+.detail-view.object-detail{
+  background:transparent !important;
+}
+
+/* Dark field fades in behind the growing source image. */
+.object-transition-backdrop{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:#050506;
+  opacity:0;
+  transition:opacity .20s ease;
+}
+.object-transition-backdrop.visible{
+  opacity:1;
+}
+
+/* Object UI sits above the backdrop, below the morphing image. */
+.object-detail-body{
+  z-index:2;
+  opacity:1;
+  transform:translateY(0);
+  transition:
+    opacity .20s ease,
+    transform .24s cubic-bezier(.2,.72,.24,1);
+}
+
+.object-detail-topbar{
+  opacity:1;
+  transition:opacity .18s ease;
+}
+
+/* During entry, keep the real mini-app hidden until the source image
+   is visibly becoming the new object's hero. */
+.object-detail.morph-opening:not(.morph-content-ready) .object-detail-body{
+  opacity:0;
+  transform:translateY(12px);
+}
+.object-detail.morph-opening:not(.morph-content-ready) .object-detail-topbar{
+  opacity:0;
+}
+
+/* During exit, the mini-app disappears while the same source image
+   collapses back into its original feed card. */
+.object-detail.morph-closing .object-detail-body{
+  opacity:0;
+  transform:translateY(10px);
+}
+.object-detail.morph-closing .object-detail-topbar{
+  opacity:0;
+}
+
+/* The animated image clone. It uses viewport-relative geometry
+   converted into detail-view coordinates, exactly like the reference. */
+.object-transition-card{
+  position:absolute;
+  z-index:35;
+  overflow:hidden;
+  background:#111;
+  opacity:0;
+  pointer-events:none;
+  will-change:left,top,width,height,border-radius,opacity;
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.20),
+    inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.object-transition-card.active{
+  opacity:1;
+}
+.object-transition-card img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center;
+  pointer-events:none;
+  -webkit-user-drag:none;
+}
+
+/* When the target is a full-screen video stage, avoid any visible
+   edge while it resolves into the native video experience. */
+.object-detail[data-kind="video"] .object-transition-card{
+  background:#000;
+}
+
+/* Keep controls above the morphing image only once content becomes ready. */
+.object-detail.morph-opening:not(.morph-content-ready) .object-detail-topbar{
+  pointer-events:none;
+}
+.object-detail.morph-closing .object-detail-topbar{
+  pointer-events:none;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .object-transition-card,
+  .object-transition-backdrop,
+  .object-detail-body,
+  .object-detail-topbar{
+    transition-duration:.001ms !important;
+  }
+}
+</style>
+
+
+
+
+
+
+<style id="v10-2-minimal-media-overrides">
+/* ================================================================
+   DIMSPACE Mobile v10.2 · Minimal Media Wall
+   Only two visible data points:
+   pause/play control + view count.
+   ================================================================ */
+.surface.two{background:#0b0b0c}
+.surface.two .card{
+  border-radius:0 !important;
+  background:#111 !important;
+  box-shadow:none !important;
+}
+.surface.two .card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 70%,rgba(0,0,0,.035) 84%,rgba(0,0,0,.22) 100%) !important;
+}
+.surface.two .card img{
+  border-radius:0 !important;
+  object-fit:cover;
+  object-position:center;
+  transform:translateZ(0);
+}
+.surface.two .cover-media{position:absolute;inset:0;overflow:hidden}
+
+.surface.two .cover-copy,
+.surface.two .cover-kicker,
+.surface.two .cover-title,
+.surface.two .cover-type-glyph,
+.surface.two .type-badge,
+.surface.two .star-meta,
+.surface.two .card-meta,
+.surface.two .card-info{display:none !important}
+
+.surface.two .media-footer{
+  position:absolute;
+  z-index:7;
+
+  left:3.65cqw;
+  right:auto;
+  bottom:2.85cqw;
+
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:1.90cqw;
+
+  pointer-events:none;
+
+  color:#fff;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.38));
+}
+
+.surface.two .media-pause{
+  width:4.30cqw;
+  height:4.30cqw;
+  flex:0 0 4.30cqw;
+
+  padding:0;
+  margin:0;
+  border:0;
+  outline:0;
+
+  display:grid;
+  place-items:center;
+
+  color:#fff;
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+
+  pointer-events:none;
+}
+
+.surface.two .media-pause svg{
+  width:4.30cqw;
+  height:4.30cqw;
+
+  display:block;
+
+  fill:none;
+  stroke:#fff;
+  stroke-width:2.05;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+
+  overflow:visible;
+}
+
+.surface.two .media-views{
+  min-height:4.30cqw;
+
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+
+  color:#fff;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "PingFang SC",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  font-size:4.18cqw;
+  line-height:1;
+  font-weight:520;
+  letter-spacing:-.018em;
+
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+
+  white-space:nowrap;
+  text-shadow:none;
+}
+
+.surface.two .media-views svg{display:none !important}
+
+.surface.borderless .media-footer{display:none !important}
+.surface.two .center-progress{display:none !important}
+</style>
+
+
+<style id="v10-3-0-app-content-only">
+html,body{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  background:#050505 !important;
+}
+body{
+  display:block !important;
+  position:fixed !important;
+  inset:0 !important;
+}
+:root{
+  --safe-top:env(safe-area-inset-top, 0px) !important;
+  --safe-bottom:env(safe-area-inset-bottom, 0px) !important;
+}
+.screen{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  height:100dvh !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:hidden !important;
+  background:#050505 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  container-type:inline-size !important;
+}
+.app{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+}
+.status-lock{
+  display:none !important;
+}
+.topbar{
+  top:var(--safe-top) !important;
+}
+.bottom{
+  padding-bottom:var(--safe-bottom) !important;
+}
+@supports not (height:100dvh){
+  .screen{height:100vh !important}
+}
+</style>
+
+</head>
+<body>
+<div class="screen">
+    <section class="app">
+      <main class="surface two" id="surface">
+        <div class="world" id="world"></div>
+        <div class="ambient-light" aria-hidden="true"></div>
+        <div class="edge-dark" aria-hidden="true"></div>
+        <div class="world-focus-field" aria-hidden="true"></div>
+      </main>
+
+      
+
+      <section class="section-view" id="dailyView" data-section="daily" aria-hidden="true">
+        <div class="section-shell">
+          <div>
+            <div class="section-title">日常</div>
+            <div class="section-sub">更安静、更有人感的关系流。这里后续单独设计朋友、关注与生活记录。</div>
+          </div>
+          <div class="section-card">
+            <h3>关系与生活</h3>
+            <p>先保留可点击跳转状态。下一步我们再单独设计：朋友动态、关注的人、自己的分享，以及让 Assistant 更懂你的生活。</p>
+          </div>
+          <div class="section-row">
+            <div class="mini-item"><div class="k">下一步</div><div class="v">关系流结构</div></div>
+            <div class="mini-item"><div class="k">状态</div><div class="v">已可点击</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-view" id="messageView" data-section="messages" aria-hidden="true">
+        <div class="section-shell">
+          <div>
+            <div class="section-title">消息</div>
+            <div class="section-sub">这里后续承接人与项目、助理与结果，不再只是传统联系人列表。</div>
+          </div>
+          <div class="section-card">
+            <h3>结果优先</h3>
+            <p>手机端核心是：看结果、做决定、继续沟通。下一步我们再拆消息列表、项目入口和执行结果页。</p>
+          </div>
+          <div class="section-row">
+            <div class="mini-item"><div class="k">下一步</div><div class="v">消息列表</div></div>
+            <div class="mini-item"><div class="k">状态</div><div class="v">已可点击</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-view" id="mineView" data-section="mine" aria-hidden="true">
+        <div class="section-shell">
+          <div>
+            <div class="section-title">我的</div>
+            <div class="section-sub">未来这里会成为你的数字资产世界：项目、作品、文件、Skill、应用、权益与数据。</div>
+          </div>
+          <div class="section-card">
+            <h3>资产世界</h3>
+            <p>当前先做可点击跳转。之后我们会一个一个设计：项目、作品、文件、应用、AI 和身份。</p>
+          </div>
+          <div class="section-row">
+            <div class="mini-item"><div class="k">下一步</div><div class="v">资产首页</div></div>
+            <div class="mini-item"><div class="k">状态</div><div class="v">已可点击</div></div>
+          </div>
+        </div>
+      </section>
+
+
+      <div class="detail-view object-detail" id="detailView" aria-hidden="true">
+        <div class="object-transition-backdrop" id="detailTransitionBackdrop" aria-hidden="true"></div>
+        <div class="object-transition-card" id="detailTransitionCard" aria-hidden="true">
+          <img id="detailTransitionImage" alt="">
+        </div>
+
+        <div class="object-detail-topbar">
+          <button class="detail-back object-back" id="detailBackBtn" type="button" aria-label="返回">
+            <svg viewBox="0 0 24 24"><path d="M15.5 5.5 9 12l6.5 6.5"/></svg>
+          </button>
+
+          <div class="object-detail-identity" id="detailIdentity">
+            <span class="object-kind-dot" id="detailKindDot"></span>
+            <span id="detailKindLabel">对象</span>
+          </div>
+
+          <div class="object-detail-actions">
+            <button class="object-icon-btn" id="detailFavoriteBtn" type="button" aria-label="收藏">
+              <svg viewBox="0 0 24 24"><path d="M12 20.5 4.4 13.1a5 5 0 0 1 7.1-7.1L12 6.5l.5-.5a5 5 0 1 1 7.1 7.1Z"/></svg>
+            </button>
+            <button class="object-icon-btn" id="detailMoreBtn" type="button" aria-label="更多">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.25"/><circle cx="12" cy="12" r="1.25"/><circle cx="19" cy="12" r="1.25"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="object-detail-body" id="detailObjectBody"></div>
+      </div>
+
+      <!-- FROZEN TOP -->
+      <div class="top-eat-shadow" aria-hidden="true"></div>
+      <header class="topbar">
+        <div class="top-left">
+          <button class="icon-btn menu" type="button" aria-label="菜单">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 6.3H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M4 12H16.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M4 17.7H12.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" type="button">推荐</button>
+          <button class="tab" type="button">关注</button>
+        </div>
+        <div class="top-right">
+          <button class="icon-btn search" type="button" aria-label="搜索">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="2.1"/>
+              <path d="M15.6 15.6L19.7 19.7" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- BOTTOM · reference image style -->
+      <nav class="bottom bottom-ref">
+        <button class="nav active" data-section="home" type="button" aria-label="首页">
+          <svg class="nav-icon home-icon" viewBox="0 0 28 28" aria-hidden="true">
+            <path class="home-fill" d="M3.6 12.1 14 3.5l10.4 8.6v10.7c0 1-.8 1.8-1.8 1.8h-5.1v-7.1h-7v7.1H5.4c-1 0-1.8-.8-1.8-1.8Z"/>
+          </svg>
+          <span class="nav-label">首页</span>
+        </button>
+
+        <button class="nav" data-section="daily" type="button" aria-label="日常">
+          <svg class="nav-icon compass-icon" viewBox="0 0 28 28" aria-hidden="true">
+            <circle cx="14" cy="14" r="10.1"/>
+            <path d="m17.85 10.15-2.2 5.5-5.5 2.2 2.2-5.5Z"/>
+            <circle class="compass-core" cx="14" cy="14" r="1.15"/>
+          </svg>
+          <span class="nav-label">日常</span>
+        </button>
+
+        <button class="center" type="button" aria-label="添加">
+          <span class="plus-shell">
+            <svg class="plus-icon" viewBox="0 0 28 28" aria-hidden="true">
+              <path d="M14 7.2v13.6M7.2 14h13.6"/>
+            </svg>
+          </span>
+          <span class="center-label" aria-hidden="true"></span>
+        </button>
+
+        <button class="nav" data-section="messages" type="button" aria-label="消息">
+          <svg class="nav-icon bell-icon" viewBox="0 0 28 28" aria-hidden="true">
+            <path d="M7.1 20.6h13.8c-1.8-2-2.5-4.3-2.5-7.2 0-3.2-1.8-5.6-4.4-5.6s-4.4 2.4-4.4 5.6c0 2.9-.7 5.2-2.5 7.2Z"/>
+            <path d="M11.5 23.1c.6 1 1.4 1.5 2.5 1.5s1.9-.5 2.5-1.5"/>
+          </svg>
+          <span class="nav-label">消息</span>
+        </button>
+
+        <button class="nav" data-section="mine" type="button" aria-label="我的">
+          <svg class="nav-icon user-icon" viewBox="0 0 28 28" aria-hidden="true">
+            <circle cx="14" cy="9.1" r="4.2"/>
+            <path d="M5.8 24c.6-5 3.6-7.3 8.2-7.3s7.6 2.3 8.2 7.3Z"/>
+          </svg>
+          <span class="nav-label">我的</span>
+        </button>
+      </nav>
+    </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =================================================================
+     01 · DATA
+     只保留首页对象类型；详情页完全不存在。
+     ================================================================= */
+  const IMAGES=[
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1493612276216-ee3925520721?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1521747116042-5a810fda9664?auto=format&fit=crop&fm=jpg&q=80&w=1600',
+    'https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&fm=jpg&q=80&w=1600'
+  ];

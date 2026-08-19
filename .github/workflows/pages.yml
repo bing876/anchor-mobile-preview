@@ -1,4 +1,4 @@
-name: Deploy exact v10.3.0 app-only
+name: Deploy current static mobile preview
 
 on:
   push:
@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 concurrency:
-  group: pages-exact-v103
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -23,64 +23,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
-      - name: Materialize exact app-only HTML
+      - name: Build static site
         shell: bash
         run: |
           set -euo pipefail
-          git show 5226e0f1817d4f6d38f607f612398dfdb29600f2:v10-3-0-app-only.gz.b64 > /tmp/v103.b64
-          python - <<'PY'
-          from pathlib import Path
-          import base64, gzip, hashlib
-
-          payload = Path('/tmp/v103.b64').read_text(encoding='utf-8').strip()
-          html = gzip.decompress(base64.b64decode(payload)).decode('utf-8')
-
-          cleanup = '''\n<script id="dimspace-public-cache-cleanup">\nif('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}\nif('caches' in window){caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});}\n</script>\n'''
-          if 'dimspace-public-cache-cleanup' not in html:
-              html = html.replace('</body>', cleanup + '</body>', 1)
-
-          # Hard validation: this must be the app content, not the phone simulator.
-          assert 'device-stage' not in html
-          assert 'device-shell' not in html
-          assert 'simulator-1290x2796' not in html
-          assert 'media-footer' in html
-          assert 'FEED_VIEW_COUNTS' in html
-          assert 'pause.innerHTML' in html
-          assert 'product.html?v=1031' not in html
-
-          Path('index.html').write_text(html, encoding='utf-8')
-          Path('v10-3-0-app-content.html').write_text(html, encoding='utf-8')
-          print('index bytes:', len(html.encode('utf-8')))
-          print('index sha256:', hashlib.sha256(html.encode('utf-8')).hexdigest())
-          PY
-
-          cat > service-worker.js <<'SW'
-          self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
-          self.addEventListener('activate',event=>event.waitUntil((async()=>{
-            const keys=await caches.keys();
-            await Promise.all(keys.map(k=>caches.delete(k)));
-            await self.registration.unregister();
-            await self.clients.claim();
-          })()));
-          self.addEventListener('fetch',()=>{});
-          SW
-
-      - name: Build static Pages artifact
-        shell: bash
-        run: |
           rm -rf dist
           mkdir -p dist
           cp index.html dist/index.html
-          cp v10-3-0-app-content.html dist/v10-3-0-app-content.html
           cp service-worker.js dist/service-worker.js
+          cp -R v103-app dist/v103-app
           [ -f icon.svg ] && cp icon.svg dist/icon.svg || true
           [ -f manifest.webmanifest ] && cp manifest.webmanifest dist/manifest.webmanifest || true
           touch dist/.nojekyll
@@ -93,16 +50,3 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Persist exact public HTML to main
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html v10-3-0-app-content.html service-worker.js
-          if git diff --cached --quiet; then
-            echo "Exact app-only HTML already persisted."
-          else
-            git commit -m "pages: materialize exact v10.3.0 app-only HTML"
-            git push origin HEAD:main
-          fi

@@ -1,0 +1,565 @@
+y-vh/2)/(vh*.46);
+      const dist=Math.min(1.35,Math.hypot(nx,ny));
+      const raw=Math.max(0,1-dist/1.02);
+      const focus=smooth(raw);
+
+      const targetBrightness=.42+focus*.74;
+      const targetSaturation=.62+focus*.38;
+      const targetContrast=.92+focus*.10;
+      const targetOpacity=.84+focus*.16;
+
+      const brightness=lerp(1,targetBrightness,borderlessAmount);
+      const saturation=lerp(1,targetSaturation,borderlessAmount);
+      const contrast=lerp(1,targetContrast,borderlessAmount);
+      const opacity=lerp(1,targetOpacity,borderlessAmount);
+
+      img.style.filter=
+        `brightness(${brightness.toFixed(3)}) `+
+        `saturate(${saturation.toFixed(3)}) `+
+        `contrast(${contrast.toFixed(3)})`;
+      img.style.opacity=opacity.toFixed(3);
+
+      const glow=.06*focus*borderlessAmount;
+      el.style.boxShadow =
+        `inset 0 0 0 1px rgba(255,255,255,${(.05+.01*borderlessAmount).toFixed(3)}), ` +
+        `0 1px 0 rgba(255,255,255,.02), ` +
+        `0 0 ${Math.round(18*focus*borderlessAmount)}px rgba(255,255,255,${glow.toFixed(3)})`;
+    });
+  }
+
+  function applyLayout(nextLayout,instant=false){
+    layout=nextLayout;
+    cards.forEach(el=>el.classList.toggle('instant',instant));
+    render();
+    requestAnimationFrame(()=>cards.forEach(el=>el.classList.remove('instant')));
+  }
+
+  function cameraBounds(){
+    if(mode==='two'){
+      const w=surface.clientWidth;
+      const cardH=((w-1)/2)*1.3333;
+      const maxY=12*(cardH+1)-surface.clientHeight+100;
+      const pages=Math.ceil(CARD_COUNT/24);
+
+      return {
+        minX:0,
+        maxX:Math.max(0,(pages-1)*w),
+        minY:0,
+        maxY:Math.max(0,maxY)
+      };
+    }
+
+    const vw=surface.clientWidth;
+    const vh=surface.clientHeight;
+    const xs=layout.map(p=>p.x);
+    const ys=layout.map(p=>p.y);
+    const maxXs=layout.map(p=>p.x+p.w);
+    const maxYs=layout.map(p=>p.y+p.h);
+
+    return {
+      minX:Math.min(...xs)-vw*.58,
+      maxX:Math.max(...maxXs)-vw+vw*.58,
+      minY:Math.min(...ys)-vh*.46,
+      maxY:Math.max(...maxYs)-vh+vh*.46
+    };
+  }
+
+  function clampCamera(){
+    const b=cameraBounds();
+    camX=Math.max(b.minX,Math.min(b.maxX,camX));
+    camY=Math.max(b.minY,Math.min(b.maxY,camY));
+  }
+
+  function resistValue(value,min,max,strength=.24){
+    if(value<min) return min+(value-min)*strength;
+    if(value>max) return max+(value-max)*strength;
+    return value;
+  }
+
+  function applyDragResistance(nextX,nextY){
+    const b=cameraBounds();
+    camX=resistValue(nextX,b.minX,b.maxX,.24);
+    camY=resistValue(nextY,b.minY,b.maxY,.24);
+  }
+
+  function overshoot(){
+    const b=cameraBounds();
+    const ox=camX<b.minX ? camX-b.minX : camX>b.maxX ? camX-b.maxX : 0;
+    const oy=camY<b.minY ? camY-b.minY : camY>b.maxY ? camY-b.maxY : 0;
+    return {b,ox,oy};
+  }
+
+  function springToBounds(){
+    stopMotion();
+
+    const fromX=camX;
+    const fromY=camY;
+    const b=cameraBounds();
+    const toX=Math.max(b.minX,Math.min(b.maxX,fromX));
+    const toY=Math.max(b.minY,Math.min(b.maxY,fromY));
+
+    if(Math.abs(toX-fromX)<.2 && Math.abs(toY-fromY)<.2){
+      camX=toX;
+      camY=toY;
+      render();
+      return;
+    }
+
+    const begun=performance.now();
+    const duration=220;
+
+    function tick(now){
+      const t=Math.min(1,(now-begun)/duration);
+      const e=1-Math.pow(1-t,4);
+
+      camX=lerp(fromX,toX,e);
+      camY=lerp(fromY,toY,e);
+      render();
+
+      if(t<1){
+        snapRAF=requestAnimationFrame(tick);
+      }else{
+        snapRAF=0;
+        camX=toX;
+        camY=toY;
+        render();
+      }
+    }
+
+    snapRAF=requestAnimationFrame(tick);
+  }
+
+  function nearestCard(screenX,screenY){
+    let best=0,bestD=Infinity;
+    layout.forEach((p,i)=>{
+      const cx=p.x+p.w/2-camX;
+      const cy=p.y+p.h/2-camY;
+      const dx=cx-screenX,dy=cy-screenY;
+      const d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    });
+    return best;
+  }
+
+  function setSection(section){
+    currentSection=section;
+    const isHome=section==='home';
+
+    appRoot.classList.toggle('section-home-active', isHome);
+
+    bottomNavButtons.forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.section===section);
+    });
+
+    Object.entries(sectionViews).forEach(([key,view])=>{
+      const active=!isHome && key===section;
+      if(view){
+        view.classList.toggle('active', active);
+        view.setAttribute('aria-hidden', active ? 'false' : 'true');
+      }
+    });
+
+    if(!isHome){
+      cancelBorderlessCenter(true);
+      stopMotion();
+      if(detailOpen){
+        finishCloseDetail();
+      }
+      return;
+    }
+
+    // Returning from another section previously left two-column without any
+    // active recovery timer, because stopMotion() had cancelled it.
+    // When Home becomes visible again, restart the proper recovery flow.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        if(surface.clientWidth<=0 || surface.clientHeight<=0) return;
+
+        render();
+
+        if(mode==='two'){
+          scheduleTwoAlignment(90);
+        }else if(mode==='borderless'){
+          scheduleBorderlessCenter(140);
+        }else{
+          springToBounds();
+        }
+      });
+    });
+  }
+
+
+  function resetCenterProgress(clearReady=true){
+    if(centerProgressCard>=0 && cards[centerProgressCard]){
+      const c=cards[centerProgressCard];
+      c.classList.remove('center-progress-active','center-progress-ready');
+      const bar=c.querySelector('.center-progress i');
+      if(bar) bar.style.width='0%';
+    }
+
+    centerProgressCard=-1;
+    if(clearReady) centeredCard=-1;
+  }
+
+  function cancelBorderlessCenter(clearReady=false){
+    if(borderlessCenterTimer){
+      clearTimeout(borderlessCenterTimer);
+      borderlessCenterTimer=0;
+    }
+    if(borderlessCenterRAF){
+      cancelAnimationFrame(borderlessCenterRAF);
+      borderlessCenterRAF=0;
+    }
+
+    if(centerProgressCard>=0 && centerProgressCard!==centeredCard){
+      resetCenterProgress(clearReady);
+    }else if(clearReady){
+      resetCenterProgress(true);
+    }
+  }
+
+  function scheduleBorderlessCenter(delay=220){
+    if(mode!=='borderless' || detailOpen) return;
+
+    if(borderlessCenterTimer) clearTimeout(borderlessCenterTimer);
+    borderlessCenterTimer=setTimeout(()=>{
+      borderlessCenterTimer=0;
+      startBorderlessCenter();
+    },delay);
+  }
+
+  function startBorderlessCenter(){
+    if(mode!=='borderless' || detailOpen || pinch || dragId!==null) return;
+
+    if(borderlessCenterRAF){
+      cancelAnimationFrame(borderlessCenterRAF);
+      borderlessCenterRAF=0;
+    }
+
+    const targetScreenX=surface.clientWidth*.50;
+    const targetScreenY=surface.clientHeight*.49;
+    const subject=nearestCard(targetScreenX,targetScreenY);
+    const p=layout[subject];
+    if(!p) return;
+
+    const b=cameraBounds();
+    const fromX=camX;
+    const fromY=camY;
+
+    let toX=p.x+p.w/2-targetScreenX;
+    let toY=p.y+p.h/2-targetScreenY;
+    toX=Math.max(b.minX,Math.min(b.maxX,toX));
+    toY=Math.max(b.minY,Math.min(b.maxY,toY));
+
+    const distance=Math.hypot(toX-fromX,toY-fromY);
+    const centerDuration=Math.max(2400,Math.min(3800,2550+distance*1.35));
+    const extraProgressDuration=1500;
+    const totalDuration=centerDuration+extraProgressDuration;
+    const begun=performance.now();
+
+    if(centerProgressCard!==subject){
+      resetCenterProgress(true);
+    }
+
+    centerProgressCard=subject;
+    centeredCard=-1;
+
+    const card=cards[subject];
+    const bar=card?.querySelector('.center-progress i');
+
+    if(card){
+      card.classList.add('center-progress-active');
+      card.classList.remove('center-progress-ready');
+    }
+    if(bar) bar.style.width='0%';
+
+    function easeInOutCubic(t){
+      return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    }
+
+    function tick(now){
+      const elapsed=Math.min(totalDuration,now-begun);
+
+      // Camera centering finishes first.
+      const centerT=Math.min(1,elapsed/centerDuration);
+      const centerEase=easeInOutCubic(centerT);
+
+      camX=lerp(fromX,toX,centerEase);
+      camY=lerp(fromY,toY,centerEase);
+
+      // Progress lasts 1.5s longer than the centering motion.
+      const progressT=Math.min(1,elapsed/totalDuration);
+      if(bar) bar.style.width=(progressT*100).toFixed(2)+'%';
+
+      render();
+
+      if(elapsed<totalDuration){
+        borderlessCenterRAF=requestAnimationFrame(tick);
+        return;
+      }
+
+      borderlessCenterRAF=0;
+      camX=toX;
+      camY=toY;
+
+      centeredCard=subject;
+      centerProgressCard=subject;
+
+      if(card){
+        card.classList.remove('center-progress-active');
+        card.classList.add('center-progress-ready');
+      }
+      if(bar) bar.style.width='100%';
+
+      render();
+
+      // Full progress = automatic entry.
+      // Use a direct timed handoff so no pointer/RAF state can swallow the transition.
+      setTimeout(()=>{
+        if(
+          mode==='borderless' &&
+          !detailOpen &&
+          centeredCard===subject
+        ){
+          openMinimalDetail(subject);
+        }
+      },80);
+    }
+
+    borderlessCenterRAF=requestAnimationFrame(tick);
+  }
+
+  function openMinimalDetail(index){
+    if(detailOpen) return;
+
+    cancelBorderlessCenter(false);
+
+    detailOpen=true;
+    detailMedia.src='';
+
+    document.body.classList.add('detail-mode');
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.style.display='block';
+    detailView.classList.add('open');
+    detailView.setAttribute('aria-hidden','false');
+    appRoot.classList.add('detail-open');
+  }
+
+  function finishCloseDetail(){
+    detailOpen=false;
+    detailSwipeActive=false;
+    detailPointer=null;
+
+    detailView.classList.remove('open');
+    detailView.setAttribute('aria-hidden','true');
+    detailView.style.transition='none';
+    detailView.style.transform='translate3d(0,0,0)';
+    detailView.style.display='none';
+    detailMedia.src='';
+
+    document.body.classList.remove('detail-mode');
+    appRoot.classList.remove('detail-open');
+
+    resetCenterProgress(true);
+  }
+
+  function closeMinimalDetail(animated=true){
+    if(!detailOpen) return;
+
+    if(!animated){
+      finishCloseDetail();
+      return;
+    }
+
+    detailView.style.transition='transform .28s cubic-bezier(.18,.72,.26,1)';
+    detailView.style.transform='translate3d(100%,0,0)';
+
+    let finished=false;
+    const done=()=>{
+      if(finished) return;
+      finished=true;
+      detailView.removeEventListener('transitionend',done);
+      finishCloseDetail();
+    };
+
+    detailView.addEventListener('transitionend',done);
+    setTimeout(done,340);
+  }
+
+  detailBackBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    closeMinimalDetail(true);
+  });
+
+  detailView.addEventListener('pointerdown',e=>{
+    if(!detailOpen || e.target.closest('.detail-back')) return;
+
+    detailPointer=e.pointerId;
+    detailStartX=e.clientX;
+    detailStartY=e.clientY;
+    detailLastX=e.clientX;
+    detailLastT=performance.now();
+    detailVelocityX=0;
+    detailSwipeActive=false;
+
+    try{detailView.setPointerCapture(e.pointerId)}catch(_){}
+  });
+
+  detailView.addEventListener('pointermove',e=>{
+    if(!detailOpen || e.pointerId!==detailPointer) return;
+
+    const dx=e.clientX-detailStartX;
+    const dy=e.clientY-detailStartY;
+    const width=Math.max(1,detailView.clientWidth);
+
+    if(!detailSwipeActive){
+      if(Math.abs(dx)<8 && Math.abs(dy)<8) return;
+
+      // Reference behavior: vertical intent cancels the close gesture.
+      if(Math.abs(dy)>Math.abs(dx)){
+        try{detailView.releasePointerCapture(detailPointer)}catch(_){}
+        detailPointer=null;
+        detailSwipeActive=false;
+        return;
+      }
+
+      // Rightward rollback starts only after clear intent.
+      if(dx<=10) return;
+
+      detailSwipeActive=true;
+      detailView.style.transition='none';
+    }
+
+    const follow=Math.max(0,Math.min(width*.92,dx));
+    detailView.style.transform=`translate3d(${follow}px,0,0)`;
+
+    const now=performance.now();
+    const dt=Math.max(1,now-detailLastT);
+    detailVelocityX=(e.clientX-detailLastX)/dt;
+    detailLastX=e.clientX;
+    detailLastT=now;
+
+    e.preventDefault();
+  });
+
+  function endDetailSwipe(e){
+    if(e.pointerId!==detailPointer) return;
+
+    const width=Math.max(1,detailView.clientWidth);
+    const dx=Math.max(0,e.clientX-detailStartX);
+    const shouldClose=
+      detailSwipeActive &&
+      dx>Math.min(94,width*.22);
+
+    detailPointer=null;
+
+    if(shouldClose){
+      detailView.style.transition='transform .28s cubic-bezier(.18,.72,.26,1)';
+      detailView.style.transform='translate3d(100%,0,0)';
+
+      let finished=false;
+      const done=()=>{
+        if(finished) return;
+        finished=true;
+        detailView.removeEventListener('transitionend',done);
+        finishCloseDetail();
+      };
+
+      detailView.addEventListener('transitionend',done);
+      setTimeout(done,340);
+      return;
+    }
+
+    if(detailSwipeActive){
+      detailView.style.transition='transform .22s cubic-bezier(.2,.72,.24,1)';
+      detailView.style.transform='translate3d(0,0,0)';
+      setTimeout(()=>{
+        if(detailOpen) detailView.style.transition='none';
+      },240);
+    }
+
+    detailSwipeActive=false;
+  }
+
+  detailView.addEventListener('pointerup',endDetailSwipe);
+  detailView.addEventListener('pointercancel',endDetailSwipe);
+
+  /* =================================================================
+     04 · CONTINUOUS PINCH MORPH
+     - spread from TWO: current subject holds position; neighbors expand outward.
+     - pinch from BORDERLESS: same subject holds position; neighbors pack inward.
+     No page transition; both are the same world.
+     ================================================================= */
+  function beginPinch(){
+    if(pointers.size!==2)return;
+
+    cancelBorderlessCenter(true);
+    stopMotion();
+
+    const [a,b]=[...pointers.values()];
+    const rect=surface.getBoundingClientRect();
+    const anchor={
+      x:(a.x+b.x)/2-rect.left,
+      y:(a.y+b.y)/2-rect.top
+    };
+    const distance=Math.hypot(a.x-b.x,a.y-b.y);
+
+    const subject=nearestCard(anchor.x,anchor.y);
+    borderlessSubject=subject;
+
+    const fromMode=mode;
+    const toMode=fromMode==='two'?'borderless':'two';
+
+    const fromLayout=fromMode==='two'?twoLayout():borderlessLayout(subject);
+    const toLayout=toMode==='two'?twoLayout():borderlessLayout(subject);
+
+    // Re-anchor current geometry to exactly the stored mode layout.
+    layout=fromLayout;
+
+    surface.classList.add('pinch-live');
+
+    pinch={
+      startDistance:distance,
+      fromMode,
+      toMode,
+      fromLayout,
+      toLayout,
+      subject,
+      anchor,
+      progress:0
+    };
+
+    surface.classList.add('dragging');
+  }
+
+  function updatePinch(){
+    if(!pinch || pointers.size!==2)return;
+
+    const [a,b]=[...pointers.values()];
+    const rect=surface.getBoundingClientRect();
+    const center={
+      x:(a.x+b.x)/2-rect.left,
+      y:(a.y+b.y)/2-rect.top
+    };
+    const distance=Math.hypot(a.x-b.x,a.y-b.y);
+
+    // from TWO: spread -> 1
+    // from BORDERLESS: pinch together -> 1
+    let progress;
+    if(pinch.fromMode==='two'){
+      progress=(distance/pinch.startDistance-1)/.40;
+    }else{
+      progress=(1-distance/pinch.startDistance)/.34;
+    }
+    progress=Math.max(0,Math.min(1,progress));
+    pinch.progress=progress;
+
+    layout=blendedLayout(pinch.fromLayout,pinch.toLayout,progress);
+
+    // Subject stays under the two-hand center throughout the morph.
+    const subjectPos=layout[pinch.subject];
+    camX=subjectPos.x+subjectPos.w/2-center.x;
+    camY=subjectPos.y+subjectPos.h/2-center.y;
+    render();
+  }

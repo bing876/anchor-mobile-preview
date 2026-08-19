@@ -12,15 +12,49 @@
 <style>
 html,body{margin:0;width:100%;height:100%;background:#050505;color:#fff;overflow:hidden}
 body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif}
-#state{font-size:13px;opacity:.55}
+#state{font-size:13px;opacity:.58;padding:20px;text-align:center;line-height:1.5}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
 </head>
 <body>
 <div id="state">DIMSPACE Mobile · 正在加载</div>
 <script>
 (async()=>{
   const state=document.getElementById('state');
+
+  async function decodeNative(bytes){
+    if(!('DecompressionStream' in window)) throw new Error('native gzip unsupported');
+    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).text();
+  }
+
+  async function loadPako(){
+    if(window.pako) return window.pako;
+    const urls=[
+      'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js',
+      'https://unpkg.com/pako@2.1.0/dist/pako.min.js'
+    ];
+    for(const src of urls){
+      try{
+        await new Promise((resolve,reject)=>{
+          const s=document.createElement('script');
+          s.src=src;
+          s.async=true;
+          const timer=setTimeout(()=>{s.remove();reject(new Error('timeout'))},8000);
+          s.onload=()=>{clearTimeout(timer);resolve()};
+          s.onerror=()=>{clearTimeout(timer);reject(new Error('load failed'))};
+          document.head.appendChild(s);
+        });
+        if(window.pako) return window.pako;
+      }catch(_){ }
+    }
+    throw new Error('fallback gzip unavailable');
+  }
+
+  async function decodeFallback(bytes){
+    const pako=await loadPako();
+    return new TextDecoder('utf-8').decode(pako.ungzip(bytes));
+  }
+
   try{
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
@@ -30,26 +64,35 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       const keys=await caches.keys();
       await Promise.all(keys.map(k=>caches.delete(k)));
     }
-    if(!window.pako) throw new Error('pako unavailable');
 
-    const r=await fetch('./v33/payload.b64?v=33-smart-recovery',{cache:'no-store'});
-    if(!r.ok) throw new Error('payload '+r.status);
-    const b64=(await r.text()).trim();
+    const r=await fetch('./v33/payload.b64?v=33-native-gzip',{cache:'no-store'});
+    if(!r.ok) throw new Error('payload HTTP '+r.status);
+
+    const b64=(await r.text()).replace(/\s+/g,'');
+    if(!b64.startsWith('H4sI')) throw new Error('payload format invalid');
+
     const bin=atob(b64);
     const bytes=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-    const html=new TextDecoder('utf-8').decode(window.pako.ungzip(bytes));
 
-    if(!html.includes('v3.3 Git Preview') || !html.includes('SMART TWO-COLUMN') && !html.includes('Smart Two-Column')){
-      console.warn('preview signature fallback check');
+    let html='';
+    try{
+      html=await decodeNative(bytes);
+    }catch(nativeErr){
+      console.warn('native gzip failed:',nativeErr);
+      html=await decodeFallback(bytes);
     }
+
+    if(!html || !html.includes('<!doctype html>')) throw new Error('decoded HTML invalid');
 
     document.open();
     document.write(html);
     document.close();
   }catch(err){
     console.error(err);
-    if(state) state.textContent='DIMSPACE Mobile 加载失败，请刷新';
+    if(state){
+      state.innerHTML='DIMSPACE Mobile 加载失败<br><span style="opacity:.72">'+String(err && err.message || err)+'</span>';
+    }
   }
 })();
 </script>

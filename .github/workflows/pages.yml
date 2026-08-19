@@ -1,4 +1,4 @@
-name: Deploy GitHub Pages
+name: Deploy exact v10.3.0 app-only
 
 on:
   push:
@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-exact-v103
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -23,95 +23,67 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
-      - name: Build v10.3.0 app-only preview
+      - name: Materialize exact app-only HTML
         shell: bash
         run: |
+          set -euo pipefail
+          git show 5226e0f1817d4f6d38f607f612398dfdb29600f2:v10-3-0-app-only.gz.b64 > /tmp/v103.b64
           python - <<'PY'
           from pathlib import Path
-          import base64, gzip, re, shutil
+          import base64, gzip, hashlib
 
-          loader = Path('v10-3-0.html').read_text(encoding='utf-8')
-          match = re.search(r"const b64='([^']+)'", loader, re.S)
-          if not match:
-              raise SystemExit('v10.3.0 payload not found')
+          payload = Path('/tmp/v103.b64').read_text(encoding='utf-8').strip()
+          html = gzip.decompress(base64.b64decode(payload)).decode('utf-8')
 
-          html = gzip.decompress(base64.b64decode(match.group(1))).decode('utf-8')
+          cleanup = '''\n<script id="dimspace-public-cache-cleanup">\nif('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}\nif('caches' in window){caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});}\n</script>\n'''
+          if 'dimspace-public-cache-cleanup' not in html:
+              html = html.replace('</body>', cleanup + '</body>', 1)
 
-          # Remove the simulator-only stylesheet when present.
-          html = re.sub(
-              r'\n?<style id="simulator-1290x2796">[\s\S]*?</style>\n?',
-              '\n',
-              html,
-              count=1,
-          )
+          # Hard validation: this must be the app content, not the phone simulator.
+          assert 'device-stage' not in html
+          assert 'device-shell' not in html
+          assert 'simulator-1290x2796' not in html
+          assert 'media-footer' in html
+          assert 'FEED_VIEW_COUNTS' in html
+          assert 'pause.innerHTML' in html
+          assert 'product.html?v=1031' not in html
 
-          # Keep the v10.3.0 product UI/JS untouched. Force any remaining
-          # simulator containers to become transparent full-viewport wrappers.
-          css = r'''
-          <style id="v10-3-0-app-only-public">
-          html,body{
-            width:100%;height:100%;min-height:100%;margin:0!important;padding:0!important;
-            overflow:hidden!important;background:#050505!important;
-          }
-          body{display:block!important;position:fixed!important;inset:0!important}
-          :root{
-            --safe-top:env(safe-area-inset-top,0px)!important;
-            --safe-bottom:env(safe-area-inset-bottom,0px)!important;
-          }
-          .device-stage,.device-shell,.phone,.screen{
-            position:fixed!important;inset:0!important;
-            width:100vw!important;height:100vh!important;height:100dvh!important;
-            max-width:none!important;max-height:none!important;
-            margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
-            overflow:hidden!important;background:#050505!important;
-            box-shadow:none!important;transform:none!important;
-          }
-          .device-stage,.device-shell{display:block!important}
-          .screen{container-type:inline-size!important}
-          .app{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
-          .status-lock{display:none!important}
-          .topbar{top:var(--safe-top)!important}
-          .bottom{padding-bottom:var(--safe-bottom)!important}
-          @supports not (height:100dvh){.device-stage,.device-shell,.phone,.screen{height:100vh!important}}
-          </style>
-          '''
-          html = html.replace('</head>', css + '\n</head>', 1)
-          html = re.sub(
-              r'<title>.*?</title>',
-              '<title>DIMSPACE Mobile · v10.3.0 · App Only</title>',
-              html,
-              count=1,
-              flags=re.S,
-          )
-
-          # Remove any old PWA/service-worker state after the new page loads.
-          cleanup = r'''
-          <script>
-          if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
-          if('caches' in window){caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});}
-          </script>
-          '''
-          html = html.replace('</body>', cleanup + '\n</body>', 1)
-
-          dist = Path('dist')
-          if dist.exists(): shutil.rmtree(dist)
-          dist.mkdir()
-          (dist/'index.html').write_text(html, encoding='utf-8')
-          (dist/'v10-3-0-app-content.html').write_text(html, encoding='utf-8')
-          for name in ['icon.svg','manifest.webmanifest','.nojekyll']:
-              src=Path(name)
-              if src.exists(): shutil.copy2(src, dist/name)
-
-          print('Built app-only v10.3.0:', len(html), 'bytes')
-          print('Contains heart metric:', 'media-footer' in html)
-          print('Contains old fallback:', 'product.html?v=1031' in html)
+          Path('index.html').write_text(html, encoding='utf-8')
+          Path('v10-3-0-app-content.html').write_text(html, encoding='utf-8')
+          print('index bytes:', len(html.encode('utf-8')))
+          print('index sha256:', hashlib.sha256(html.encode('utf-8')).hexdigest())
           PY
+
+          cat > service-worker.js <<'SW'
+          self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+          self.addEventListener('activate',event=>event.waitUntil((async()=>{
+            const keys=await caches.keys();
+            await Promise.all(keys.map(k=>caches.delete(k)));
+            await self.registration.unregister();
+            await self.clients.claim();
+          })()));
+          self.addEventListener('fetch',()=>{});
+          SW
+
+      - name: Build static Pages artifact
+        shell: bash
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp index.html dist/index.html
+          cp v10-3-0-app-content.html dist/v10-3-0-app-content.html
+          cp service-worker.js dist/service-worker.js
+          [ -f icon.svg ] && cp icon.svg dist/icon.svg || true
+          [ -f manifest.webmanifest ] && cp manifest.webmanifest dist/manifest.webmanifest || true
+          touch dist/.nojekyll
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
@@ -121,3 +93,16 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Persist exact public HTML to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html v10-3-0-app-content.html service-worker.js
+          if git diff --cached --quiet; then
+            echo "Exact app-only HTML already persisted."
+          else
+            git commit -m "pages: materialize exact v10.3.0 app-only HTML"
+            git push origin HEAD:main
+          fi

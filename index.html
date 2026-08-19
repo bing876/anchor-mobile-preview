@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/svg+xml" href="./anchor-logo.svg">
-<title>DIMSPACE Mobile · v3.4</title>
+<title>DIMSPACE Mobile · v3.5</title>
 <style>
 html,body{margin:0;width:100%;height:100%;background:#050505;color:#fff;overflow:hidden}
 body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif}
@@ -39,7 +39,7 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
 
     const chunks=[];
     for(const url of parts){
-      const r=await fetch(url+'?v=34-real-phone',{cache:'no-store'});
+      const r=await fetch(url+'?v=35-smart-phone',{cache:'no-store'});
       if(!r.ok) throw new Error(url+' HTTP '+r.status);
       chunks.push(await r.text());
     }
@@ -49,7 +49,17 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
     if(!html.includes('</html>')) throw new Error('HTML 结尾校验失败');
     if(!html.includes('dimspace-star-clear-all-feed-modes')) throw new Error('当前版本校验失败');
 
-    /* v3.4: two-column direct movement = borderless movement feel. */
+    /* Add smart two-column intent state. */
+    html=html.replace(
+      "let gestureAxis='pending';\n  let sideIntentFrames=0;\n  let twoHorizontalUnlocked=false;\n  let twoVerticalLockedX=null;",
+      "let gestureAxis='pending';\n  let sideIntentFrames=0;\n  let twoHorizontalUnlocked=false;\n  let twoVerticalLockedX=null;\n  let twoIntentFrames=0;"
+    );
+    html=html.replaceAll(
+      "twoVerticalLockedX=null;\n      surface.classList.add('dragging');",
+      "twoVerticalLockedX=null;\n      twoIntentFrames=0;\n      surface.classList.add('dragging');"
+    );
+
+    /* Smart two-column pointer interaction. */
     {
       const anchor="surface.addEventListener('pointermove',e=>{";
       const p=html.indexOf(anchor);
@@ -57,20 +67,71 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       const e=html.indexOf("\n  });\n\n  function endPointer",s);
       if(p<0||s<0||e<0) throw new Error('双列拖拽补丁定位失败');
       const replacement=`    if(mode==='two'){
-      applyDragResistance(
-        dragStartCamX-dx,
-        dragStartCamY-dy
-      );
+      const travel=Math.hypot(dx,dy);
+      const absDX=Math.abs(dx);
+      const absDY=Math.abs(dy);
+      const absStepX=Math.abs(stepX);
+      const absStepY=Math.abs(stepY);
+
+      if(gestureAxis==='pending'){
+        if(travel>=7){
+          if(absDY>=absDX*1.32){
+            twoIntentFrames++;
+            if(twoIntentFrames>=2 || absDY>=14){
+              gestureAxis='vertical';
+              twoVerticalLockedX=dragStartCamX;
+              twoHorizontalUnlocked=false;
+            }
+          }else if(absDX>=absDY*1.16){
+            twoIntentFrames++;
+            if(twoIntentFrames>=2 || absDX>=12){
+              gestureAxis='free';
+              twoHorizontalUnlocked=true;
+              twoVerticalLockedX=null;
+            }
+          }else if(travel>=18){
+            gestureAxis=absDY>absDX*1.08?'vertical':'free';
+            twoVerticalLockedX=gestureAxis==='vertical'?dragStartCamX:null;
+            twoHorizontalUnlocked=gestureAxis==='free';
+          }else{
+            twoIntentFrames=0;
+          }
+        }
+      }
+
+      if(gestureAxis==='vertical'){
+        const recentTurn=absStepX>=4 && absStepX>Math.max(absStepY*1.42,4);
+        const sustainedTurn=absDX>=28 && absDX>absDY*.78;
+        if(recentTurn || sustainedTurn) sideIntentFrames++;
+        else sideIntentFrames=Math.max(0,sideIntentFrames-1);
+
+        if(sideIntentFrames>=2){
+          gestureAxis='free';
+          twoHorizontalUnlocked=true;
+          twoVerticalLockedX=null;
+          dragStartX=e.clientX;
+          dragStartY=e.clientY;
+          dragStartCamX=camX;
+          dragStartCamY=camY;
+          dx=0;
+          dy=0;
+        }
+      }
+
+      if(gestureAxis==='free'){
+        applyDragResistance(dragStartCamX-dx,dragStartCamY-dy);
+      }else{
+        const lockX=twoVerticalLockedX===null?dragStartCamX:twoVerticalLockedX;
+        applyDragResistance(lockX,dragStartCamY-dy);
+      }
 
       const now=performance.now();
       const dt=Math.max(1,now-lastT);
-      velX=-(e.clientX-lastX)/dt;
+      velX=gestureAxis==='free'?-(e.clientX-lastX)/dt:0;
       velY=-(e.clientY-lastY)/dt;
-
       lastX=e.clientX;
       lastY=e.clientY;
       lastT=now;
-
       clampCamera();
       render();
       e.preventDefault();
@@ -80,7 +141,32 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       html=html.slice(0,s)+replacement+html.slice(e);
     }
 
-    /* Trackpad/mouse scrolling follows the same free movement model. */
+    /* Vertical release keeps Y inertia only; free release keeps XY inertia. */
+    html=html.replace(
+`      if(mode==='two'){
+        // Never remember an old page before the glide finishes.
+        // Recovery is calculated from the FINAL resting position.
+        twoRecoveryTargetX=null;
+
+        if(Math.hypot(ix,iy)>.40){
+          inertia(ix,iy,false);
+        }else{
+          scheduleTwoAlignment(180,nearestTwoTargetX(camX));
+        }
+      }else if(Math.hypot(ix,iy)>.55){`,
+`      if(mode==='two'){
+        twoRecoveryTargetX=null;
+        const releaseX=gestureAxis==='free'?ix:0;
+        const releaseY=iy;
+        if(Math.hypot(releaseX,releaseY)>.40){
+          inertia(releaseX,releaseY,false);
+        }else{
+          scheduleTwoAlignment(150,nearestTwoTargetX(camX));
+        }
+      }else if(Math.hypot(ix,iy)>.55){`
+    );
+
+    /* Smart trackpad/wheel axis behavior. */
     {
       const anchor="surface.addEventListener('wheel',e=>{";
       const p=html.indexOf(anchor);
@@ -88,17 +174,26 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       const e=html.indexOf("\n    if(wheelAxis==='vertical'){",s);
       if(p<0||s<0||e<0) throw new Error('双列滚轮补丁定位失败');
       const replacement=`    if(mode==='two'){
-      applyDragResistance(camX+dx,camY+dy);
+      if(wheelAxis==='vertical'){
+        if(wheelLockedX===null) wheelLockedX=camX;
+        applyDragResistance(wheelLockedX,camY+dy);
+        const clearSideTurn=Math.abs(dx)>=3 && Math.abs(dx)>Math.max(Math.abs(dy)*1.35,3);
+        if(clearSideTurn) wheelSideFrames++;
+        else wheelSideFrames=Math.max(0,wheelSideFrames-1);
+        if(wheelSideFrames>=2){wheelAxis='free';wheelLockedX=null;}
+      }
+      if(wheelAxis!=='vertical'){
+        wheelLockedX=null;
+        applyDragResistance(camX+dx,camY+dy);
+      }
       render();
-
       clearTimeout(wheelTimer);
       wheelTimer=setTimeout(()=>{
         const finalTarget=nearestTwoTargetX(camX);
         twoRecoveryTargetX=null;
-        scheduleTwoAlignment(180,finalTarget);
+        scheduleTwoAlignment(160,finalTarget);
         resetWheel();
-      },140);
-
+      },150);
       e.preventDefault();
       return;
     }
@@ -106,26 +201,25 @@ body{display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFon
       html=html.slice(0,s)+replacement+html.slice(e);
     }
 
-    /* Real phone deployment: simulator shell becomes invisible/full-viewport. */
-    const realPhoneCSS=`<style id="dimspace-real-phone-deploy-v34">
+    /* Real phone: OS owns time / Dynamic Island / signal / battery. */
+    const realPhoneCSS=`<style id="dimspace-real-phone-deploy-v35">
 html,body{width:100%!important;height:100%!important;min-height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#050505!important}
 body{display:block!important}
 .device-stage,.device-shell,.device-shell>.phone,.device-shell .screen{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important;background:#050505!important;box-shadow:none!important;overflow:hidden!important;transform:none!important;contain:none!important}
 .device-shell::before,.device-shell::after{display:none!important}
-.sim-system-ui{display:none!important}
-.device-shell .status-lock{display:flex!important}
-.device-shell .app{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;--safe-top:clamp(48px,13.41cqw,54px)!important;--safe-bottom:max(env(safe-area-inset-bottom,0px),24px)!important;border-radius:0!important;overflow:hidden!important;background:#050505!important}
+.sim-system-ui,.device-shell .status-lock{display:none!important}
+.device-shell .app{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;--safe-top:env(safe-area-inset-top,0px)!important;--safe-bottom:max(env(safe-area-inset-bottom,0px),16px)!important;border-radius:0!important;overflow:hidden!important;background:#050505!important}
 .device-shell .topbar{top:var(--safe-top)!important}
+.device-shell .surface{inset:0!important}
 </style>`;
     html=html.replace('</head>',realPhoneCSS+'</head>');
     html=html.replace(' data-simulator-frozen="true"','');
-    html=html.replace(/<title>[\s\S]*?<\/title>/,'<title>DIMSPACE Mobile · v3.4 Real Phone</title>');
+    html=html.replace(/<title>[\s\S]*?<\/title>/,'<title>DIMSPACE Mobile · v3.5 Smart Real Phone</title>');
 
     const parsed=new DOMParser().parseFromString(html,'text/html');
     const inlineScripts=[...parsed.querySelectorAll('script')].filter(s=>!s.src);
     for(const s of inlineScripts){
-      try{ new Function(s.textContent); }
-      catch(e){ throw new Error('页面脚本校验失败: '+e.message); }
+      try{new Function(s.textContent)}catch(e){throw new Error('页面脚本校验失败: '+e.message)}
     }
 
     document.open();
@@ -133,9 +227,7 @@ body{display:block!important}
     document.close();
   }catch(err){
     console.error(err);
-    if(state){
-      state.innerHTML='DIMSPACE Mobile 加载失败<br><span style="opacity:.72">'+String(err&&err.message||err)+'</span>';
-    }
+    if(state){state.innerHTML='DIMSPACE Mobile 加载失败<br><span style="opacity:.72">'+String(err&&err.message||err)+'</span>'}
   }
 })();
 </script>
